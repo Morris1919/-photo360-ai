@@ -1,0 +1,1 @@
+{"name":"Photo360 AI","short_name":"Photo360","description":"Trasforma una singola foto in un modello 3D ruotabile a 360° con AI.","start_url":"/","scope":"/","display":"standalone","orientation":"any","background_color":"#07070a","theme_color":"#0b0b0f","icons":[{"src":"/icons/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
