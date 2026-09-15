@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b0b0f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Photo360">
+  <title>Photo360 AI</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/icon.svg">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="https://unpkg.com/@google/model-viewer@4.3.1/dist/model-viewer.min.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand"><div class="logo">360°</div><div><h1>Photo360 AI</h1><p>Da una foto a un modello 3D vero.</p></div></div>
+      <button id="installBtn" class="ghost" hidden>Installa</button>
+    </header>
+    <main>
+      <section class="panel" id="uploadPanel">
+        <div id="serverBadge" class="server-badge checking">Controllo motore AI…</div>
+        <label class="dropzone" id="dropzone" for="fileInput">
+          <input id="fileInput" type="file" accept="image/*">
+          <div class="drop-icon">＋</div>
+          <strong>Carica una foto</strong>
+          <span>Meglio un soggetto intero, nitido e ben separato dallo sfondo.</span>
+        </label>
+        <div class="preview-wrap hidden" id="previewWrap">
+          <img id="photoPreview" alt="Anteprima foto">
+          <button id="removePhotoBtn" class="mini ghost">Cambia</button>
+        </div>
+        <div class="settings-grid">
+          <label class="setting"><span>Motore AI</span><select id="modelSelect"><option value="spar3d">Qualità 360°, SPAR3D</option><option value="fast3d">Veloce, Stable Fast 3D</option></select></label>
+          <label class="setting"><span>Texture</span><select id="textureSelect"><option value="1024" selected>1024 px</option><option value="2048">2048 px</option><option value="512">512 px</option></select></label>
+        </div>
+        <label class="setting" id="ratioSetting"><span>Dimensione soggetto <b id="ratioValue">85%</b></span><input id="foregroundRatio" type="range" min="0.35" max="1" step="0.05" value="0.85"></label>
+        <button id="generateBtn" class="primary big" disabled>Crea modello 360°</button>
+        <div class="tip-card"><strong>Per un risultato migliore</strong><span>Una sola foto non contiene il retro reale. L’AI lo ricostruisce in modo plausibile. Foto frontale, luce uniforme e soggetto isolato migliorano molto il risultato.</span></div>
+      </section>
+      <section class="panel hidden" id="workingPanel">
+        <div class="loader-orbit"><span></span></div><h2>Sto costruendo il 3D</h2><p id="workingText">Preparo la foto per il motore AI…</p>
+        <div class="working-steps"><div id="step1" class="step active">1 <span>Ottimizzazione foto</span></div><div id="step2" class="step">2 <span>Ricostruzione geometria e retro</span></div><div id="step3" class="step">3 <span>Creazione texture</span></div><div id="step4" class="step">4 <span>Caricamento viewer 360°</span></div></div>
+        <button id="cancelBtn" class="ghost">Annulla</button>
+      </section>
+      <section class="panel viewer-panel hidden" id="viewerPanel">
+        <div class="viewer-head"><div><strong>Modello 3D</strong><span id="modelLabel">AI 360°</span></div><button id="newPhotoBtn" class="ghost">Nuova foto</button></div>
+        <model-viewer id="modelViewer" camera-controls touch-action="pan-y" shadow-intensity="1" shadow-softness="0.85" exposure="1" environment-image="neutral" interaction-prompt="auto" min-camera-orbit="auto auto 55%" max-camera-orbit="auto auto 250%" camera-orbit="0deg 75deg 105%" alt="Modello 3D generato dalla foto"><div class="mv-progress" slot="progress-bar"><div id="mvProgress"></div></div></model-viewer>
+        <div class="viewer-actions"><button id="autoRotateBtn" class="primary">Auto rotazione</button><button id="resetViewBtn" class="secondary">Vista frontale</button></div>
+        <div class="viewer-actions"><button id="downloadGlbBtn" class="secondary">Scarica GLB</button><button id="fullBtn" class="secondary">Schermo intero</button></div>
+        <div class="truth-note">Il davanti deriva dalla tua foto. Le parti mai fotografate, soprattutto il retro, sono una ricostruzione dell’AI e possono differire dalla realtà.</div>
+      </section>
+      <section class="panel error-panel hidden" id="errorPanel"><div class="error-icon">!</div><h2>Non è riuscito</h2><p id="errorText"></p><button id="retryBtn" class="primary big">Riprova</button></section>
+    </main>
+    <footer><span>Photo360 AI</span><span>PWA • GLB • 360°</span></footer>
+  </div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
