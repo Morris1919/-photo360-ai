@@ -1,0 +1,15 @@
+{
+  "name": "photo360-ai-complete",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "PWA image-to-3D con Stability AI SPAR3D / Stable Fast 3D",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs",
+    "check": "node --check server.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
