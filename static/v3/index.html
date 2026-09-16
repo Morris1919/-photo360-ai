@@ -7,22 +7,21 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Morris DL">
-<title>Morris Downloader V3</title>
+<title>Morris Downloader V3.1</title>
 <link rel="manifest" href="/manifest-v3.webmanifest">
 <link rel="apple-touch-icon" href="/icon.svg">
-<link rel="stylesheet" href="/styles-v2.css?v=20260916v3">
+<link rel="stylesheet" href="/styles-v2.css?v=20260916v31">
 <style>
 .engine{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;margin-bottom:14px}
 .engine strong{font-size:13px}.engine span{font-size:10px;color:#2674e7;background:#eef5ff;border:1px solid #d9e8ff;padding:6px 9px;border-radius:999px;font-weight:900}
 .route{padding:14px}.route h3{margin:0 0 7px;font-size:16px}.route p{margin:0;color:var(--muted);font-size:12px;line-height:1.45}
 .handoff{display:grid;grid-template-columns:1fr;gap:10px}.handoff button{height:64px;border:0;border-radius:18px;font-weight:900;font-size:16px}
-.note{padding:13px 15px;font-size:11px;line-height:1.45;color:var(--muted)}
 </style>
 </head>
 <body>
 <main class="shell">
   <section class="hero card">
-    <span class="v2">V3 • VIDSSAVE</span>
+    <span class="v2">V3.1 • VIDSSAVE</span>
     <div class="brand"><div class="name">Morris <span>🐾</span></div><div class="down">Downloader</div><p>I tuoi video, sempre con te 💙</p></div>
     <div class="dog"><img id="morrisHero" src="/icon.svg" alt="Morris"></div>
   </section>
@@ -42,27 +41,25 @@
 
   <section class="preview card">
     <div class="pic"><img id="previewImage" src="/icon.svg" alt="Anteprima"><div class="motto">Morris rende tutto più bello ♡</div></div>
-    <div class="previewcopy"><div><h2 id="videoTitle">Pronto quando vuoi</h2><p id="videoMeta">Incolla un link. Morris ti porta al downloader giusto.</p></div><b id="platformBadge">WEB</b></div>
+    <div class="previewcopy"><div><h2 id="videoTitle">Pronto quando vuoi</h2><p id="videoMeta">Per YouTube non devi reincollare il link.</p></div><b id="platformBadge">WEB</b></div>
   </section>
 
   <section class="route card">
     <h3>🎬 Qualità e formato</h3>
-    <p>Li scegli direttamente su VidsSave, così vedi solo le risoluzioni e i formati realmente disponibili per quel video.</p>
+    <p>Per YouTube Morris apre direttamente il collegamento VidsSave del video. Su VidsSave scegli poi la qualità realmente disponibile.</p>
   </section>
 
   <section class="card action">
-    <div class="handoff">
-      <button id="openBtn" class="primary">⬇ SCARICA CON VIDSSAVE</button>
-    </div>
-    <p>Il link viene copiato automaticamente. Quando si apre VidsSave, tocca <b>Incolla</b>, scegli qualità/formato e scarica.</p>
+    <div class="handoff"><button id="openBtn" class="primary">⬇ SCARICA CON VIDSSAVE</button></div>
+    <p><b>YouTube:</b> niente secondo copia/incolla. Per le altre piattaforme l'integrazione resta quella disponibile da VidsSave.</p>
   </section>
 
-  <section class="features"><div>⚡<small>Un solo<br>passaggio</small></div><div>🐾<small>Morris davanti,<br>VidsSave dietro</small></div><div>📱<small>Perfetto<br>su iPhone</small></div></section>
+  <section class="features"><div>⚡<small>YouTube<br>diretto</small></div><div>🐾<small>Morris davanti,<br>VidsSave dietro</small></div><div>📱<small>Pensato<br>per iPhone</small></div></section>
 
   <section class="card install"><img src="/icon.svg" alt=""><div><strong>Aggiungila alla Home</strong><p>Safari → Condividi → Aggiungi alla schermata Home.</p></div></section>
 
   <footer>Usa Morris Downloader solo per contenuti tuoi o che sei autorizzato a scaricare.<br><span>Good videos. Happier days. ♡ 🐾</span></footer>
 </main>
 <div id="toast" class="toast"></div>
-<script src="/app-v3.js?v=20260916v3" defer></script>
+<script src="/app-v3.js?v=20260916v31" defer></script>
 </body></html>
