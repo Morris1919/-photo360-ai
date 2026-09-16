@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#eef6ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Morris DL">
+<title>Morris Downloader</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon.svg">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<main class="shell">
+  <section class="hero card">
+    <div class="brand"><div class="name">Morris <span>🐾</span></div><div class="down">Downloader</div><p>I tuoi video, sempre con te 💙</p></div>
+    <div class="dog"><img id="morrisHero" src="/icon.svg" alt="Morris"></div>
+  </section>
+
+  <section class="card controls">
+    <div class="urlrow"><div class="urlbox"><span>🔗</span><input id="urlInput" type="url" inputmode="url" placeholder="Incolla qui il link…"></div><button id="pasteBtn" class="small">Incolla</button></div>
+    <div class="platforms"><span>▶ YouTube</span><span>◎ Instagram</span><span>f Facebook</span><span>d Dailymotion</span><span>+ TikTok, X, Vimeo</span></div>
+    <button id="analyzeBtn" class="secondary wide">Analizza video</button>
+  </section>
+
+  <section class="preview card">
+    <div class="pic"><img id="previewImage" src="/icon.svg" alt="Anteprima"><div class="motto">Morris rende tutto più bello ♡</div></div>
+    <div class="previewcopy"><div><h2 id="videoTitle">Pronto quando vuoi</h2><p id="videoMeta">Incolla un link e rilevo le qualità disponibili.</p></div><b id="platformBadge">WEB</b></div>
+  </section>
+
+  <section class="card opts">
+    <h3>⚙️ Risoluzione</h3>
+    <div id="qualityGrid" class="qualities">
+      <button class="quality active" data-quality="1080"><strong>1080p</strong><small>Full HD</small></button>
+      <button class="quality" data-quality="720"><strong>720p</strong><small>HD</small></button>
+      <button class="quality" data-quality="480"><strong>480p</strong><small>SD</small></button>
+    </div>
+    <h3>📄 Formato</h3>
+    <div class="formats"><button class="format active" data-format="mp4">🎥 <span><strong>MP4</strong><small>Video e audio</small></span></button><button class="format" data-format="mp3">🎵 <span><strong>MP3</strong><small>Solo audio</small></span></button></div>
+  </section>
+
+  <section class="card action">
+    <div id="progressWrap" class="progress hidden"><div><span id="progressText">Preparo…</span><span id="progressPct">0%</span></div><i><em id="progressBar"></em></i></div>
+    <div class="actions"><button id="downloadBtn" class="primary">⬇ SCARICA</button><button id="photosBtn" class="photos">🌈 SALVA IN FOTO</button></div>
+    <p>Su iPhone, “Salva in Foto” apre il foglio iOS con il file pronto. Tocca <b>Salva video</b>.</p>
+  </section>
+
+  <section class="features"><div>⚡<small>Veloce<br>e semplice</small></div><div>🛡️<small>Nessuna<br>registrazione</small></div><div>♥<small>Sempre con te,<br>come Morris 🐾</small></div></section>
+
+  <section class="card install"><img src="/icon.svg" alt=""><div><strong>Mettila sulla Home dell’iPhone</strong><p>Safari → Condividi → Aggiungi alla schermata Home.</p></div></section>
+
+  <footer>Usa Morris Downloader solo per contenuti tuoi o che sei autorizzato a scaricare. Non aggira DRM o protezioni.<br><span>Good videos. Happier days. ♡ 🐾</span></footer>
+</main>
+<div id="toast" class="toast"></div>
+<script src="/app.js" defer></script>
+</body></html>
