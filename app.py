@@ -229,7 +229,7 @@ def v4_download(req:DownloadReq):
     url=validate(req.url)
     fmt="mp3" if req.media_format=="mp3" else str(int(req.quality or 1080))
     if is_youtube(url):
-        data=saver_get("/api/youtube-api",{"url":url,"farmat":fmt})
+        data=saver_get("/api/youtube-telegram-base",{"url":url,"farmat":fmt})
         dl=data.get("url") or data.get("download_url")
         if not dl:
             raise HTTPException(502,"SaverAPI non ha restituito il file richiesto.")
