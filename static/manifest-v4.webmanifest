@@ -1,0 +1,1 @@
+{"name":"Morris Downloader","short_name":"Morris DL","description":"Downloader personale per contenuti autorizzati, con SaverAPI.","start_url":"/v4/","display":"standalone","background_color":"#eef6ff","theme_color":"#eef6ff","icons":[{"src":"/icon.svg","sizes":"512x512","type":"image/svg+xml","purpose":"any maskable"}]}
