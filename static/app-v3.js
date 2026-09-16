@@ -19,13 +19,16 @@ function youtubeId(url){
   try{
     const u=new URL(url);
     if(u.hostname==="youtu.be")return u.pathname.split("/").filter(Boolean)[0]||"";
-    if(u.hostname.includes("youtube.com"))return u.searchParams.get("v")||((u.pathname.match(/\/(?:shorts|embed)\/([^/?]+)/)||[])[1]||"");
+    if(u.hostname.includes("youtube.com"))return u.searchParams.get("v")||((u.pathname.match(/\/(?:shorts|embed|live)\/([^/?]+)/)||[])[1]||"");
   }catch(e){}
   return"";
 }
+function directYoutubeTarget(url){
+  const id=youtubeId(url);
+  return id ? "https://vidsyoutube.com/watch?v="+encodeURIComponent(id) : null;
+}
 function targetFor(p){
   const map={
-    YOUTUBE:"https://vidssave.com/it/yt-downloader",
     FACEBOOK:"https://vidssave.com/it/facebook",
     TIKTOK:"https://vidssave.com/it/tiktok",
     DAILYMOTION:"https://vidssave.com/it/dailymotion",
@@ -53,11 +56,16 @@ function prepare(){
   state.platform=platformFor(url);
   el.badge.textContent=state.platform;
   el.title.textContent=state.platform==="WEB"?"Contenuto web":"Video "+state.platform.charAt(0)+state.platform.slice(1).toLowerCase();
-  el.meta.textContent="Pronto per VidsSave. Il link sarà copiato automaticamente.";
+  if(state.platform==="YOUTUBE"){
+    el.meta.textContent="YouTube pronto: apertura diretta senza reincollare il link.";
+    toast("Perfetto. Per YouTube ora è diretto.");
+  }else{
+    el.meta.textContent="Pronto per VidsSave.";
+    toast("Pronto. Premi Scarica con VidsSave.");
+  }
   const id=youtubeId(url);
   if(id)el.img.src="https://i.ytimg.com/vi/"+id+"/hqdefault.jpg";
   else if(state.morris)el.img.src=state.morris;
-  toast("Pronto. Ora premi Scarica con VidsSave.");
 }
 
 async function copyUrl(url){
@@ -76,9 +84,19 @@ async function openVidsSave(){
   const url=el.url.value.trim();
   if(!url)return toast("Incolla prima il link.");
   if(state.url!==url)prepare();
+
+  if(state.platform==="YOUTUBE"){
+    const direct=directYoutubeTarget(url);
+    if(direct){
+      toast("Apro direttamente il video su VidsSave…",1100);
+      setTimeout(()=>{location.href=direct},250);
+      return;
+    }
+  }
+
   const ok=await copyUrl(url);
-  toast(ok?"Link copiato. Apro VidsSave…":"Apro VidsSave. Tieni premuto e incolla il link.",1500);
-  setTimeout(()=>{location.href=targetFor(state.platform)},450);
+  toast(ok?"Link copiato. Apro VidsSave…":"Apro VidsSave. Potrebbe servire Incolla.",1200);
+  setTimeout(()=>{location.href=targetFor(state.platform)},300);
 }
 
 el.prepare.onclick=prepare;
