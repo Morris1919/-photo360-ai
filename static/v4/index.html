@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#eef6ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Morris DL">
+<title>Morris Downloader</title>
+<link rel="manifest" href="/manifest-v4.webmanifest">
+<link rel="apple-touch-icon" href="/icon.svg">
+<link rel="stylesheet" href="/styles-v2.css?v=20260916v4">
+<style>
+.engine{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;margin-bottom:14px}
+.engine strong{font-size:13px}.engine span{font-size:10px;color:#2674e7;background:#eef5ff;border:1px solid #d9e8ff;padding:6px 9px;border-radius:999px;font-weight:900}
+.engine span.off{color:#9a6117;background:#fff8e9;border-color:#ffe0a6}
+.filelist{display:grid;gap:8px;margin-top:12px}.fileitem{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:15px;padding:10px 12px;background:#fff}.fileitem button{border:0;border-radius:12px;background:#2477ff;color:#fff;padding:9px 12px;font-weight:800}
+.size{font-size:10px;color:var(--muted)}.statusline{font-size:11px;color:var(--muted);margin-top:8px}
+</style>
+</head>
+<body>
+<main class="shell">
+  <section class="hero card">
+    <span class="v2">V4 • SAVERAPI</span>
+    <div class="brand"><div class="name">Morris <span>🐾</span></div><div class="down">Downloader</div><p>I tuoi video, sempre con te 💙</p></div>
+    <div class="dog"><img id="morrisHero" src="/icon.svg" alt="Morris"></div>
+  </section>
+
+  <section class="engine card">
+    <strong>Motore professionale</strong><span id="engineStatus">CONTROLLO…</span>
+  </section>
+
+  <section class="card controls">
+    <div class="urlrow">
+      <div class="urlbox"><span>🔗</span><input id="urlInput" type="url" inputmode="url" placeholder="Incolla qui il link…"></div>
+      <button id="pasteBtn" class="small">Incolla</button>
+    </div>
+    <div class="platforms"><span>▶ YouTube</span><span>◎ Instagram</span><span>f Facebook</span><span>♪ TikTok</span><span>d Dailymotion</span><span>𝕏 X</span><span>+ Vimeo, Reddit…</span></div>
+    <button id="analyzeBtn" class="secondary wide">Analizza video</button>
+  </section>
+
+  <section class="preview card">
+    <div class="pic"><img id="previewImage" src="/icon.svg" alt="Anteprima"><div class="motto">Morris rende tutto più bello ♡</div></div>
+    <div class="previewcopy"><div><h2 id="videoTitle">Pronto quando vuoi</h2><p id="videoMeta">Incolla un link e Morris prepara tutto.</p></div><b id="platformBadge">WEB</b></div>
+  </section>
+
+  <section class="card opts">
+    <h3>⚙️ Risoluzione</h3>
+    <div id="qualityGrid" class="qualities">
+      <button class="quality active" data-quality="1080"><strong>1080p</strong><small>Full HD</small></button>
+      <button class="quality" data-quality="720"><strong>720p</strong><small>HD</small></button>
+      <button class="quality" data-quality="480"><strong>480p</strong><small>SD</small></button>
+      <button class="quality" data-quality="360"><strong>360p</strong><small>SD</small></button>
+      <button class="quality" data-quality="240"><strong>240p</strong><small>Low</small></button>
+      <button class="quality" data-quality="144"><strong>144p</strong><small>Low</small></button>
+    </div>
+    <h3>📄 Formato</h3>
+    <div class="formats">
+      <button class="format active" data-format="mp4">🎥 <span><strong>MP4</strong><small>Video e audio</small></span></button>
+      <button class="format" data-format="mp3">🎵 <span><strong>MP3</strong><small>Solo audio</small></span></button>
+    </div>
+    <div id="formatHint" class="statusline"></div>
+  </section>
+
+  <section class="card action">
+    <div id="progressWrap" class="progress hidden"><div><span id="progressText">Preparo…</span><span id="progressPct">0%</span></div><i><em id="progressBar"></em></i></div>
+    <div class="actions">
+      <button id="downloadBtn" class="primary">⬇ SCARICA</button>
+      <button id="photosBtn" class="photos">🌈 SALVA IN FOTO</button>
+    </div>
+    <div id="fileList" class="filelist hidden"></div>
+    <p>Su iPhone, “Salva in Foto” prepara il file e apre il foglio iOS. Tocca <b>Salva video</b>.</p>
+  </section>
+
+  <section class="features"><div>⚡<small>Un solo<br>incolla</small></div><div>🛡️<small>Chiave API<br>nascosta</small></div><div>📱<small>Download<br>su iPhone</small></div></section>
+
+  <section class="card install"><img src="/icon.svg" alt=""><div><strong>Mettila sulla Home</strong><p>Safari → Condividi → Aggiungi alla schermata Home.</p></div></section>
+
+  <footer>Usa Morris Downloader solo per contenuti tuoi o che sei autorizzato a scaricare.<br><span>Good videos. Happier days. ♡ 🐾</span></footer>
+</main>
+<div id="toast" class="toast"></div>
+<script src="/app-v4.js?v=20260916v4" defer></script>
+</body></html>
