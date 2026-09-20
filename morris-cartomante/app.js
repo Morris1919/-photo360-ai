@@ -1470,3 +1470,188 @@ function renderResult(){
     console.error("Morris AI error",err);
   });
 }
+
+
+// ===== MORRIS CARTOMANTE V10: fully local interpretive engine, no external AI =====
+function localQuestionProfileV10(raw){
+  const a=analyseQuestionV4(raw);
+  const s=normalizeV4(raw);
+  let polarity="open";
+  if(/^(avro|avrò|faro|farò|tornera|tornerà|mi ama|mi cerchera|mi cercherà|riuscir|migliorera|migliorerà|andra|andrà|succeder)/.test(s)) polarity="yesno";
+  return {...a,polarity};
+}
+function positionWeightV10(label){
+  const s=normalizeV4(label);
+  if(/esito|futuro|possibile/.test(s)) return 2.2;
+  if(/presente/.test(s)) return 1.7;
+  if(/sfida/.test(s)) return 1.4;
+  if(/prossimo/.test(s)) return 1.9;
+  if(/radice|passato/.test(s)) return 1.25;
+  return 1;
+}
+function valenceV10(d){
+  const text=normalizeV4(meaning(d));
+  const plus=["crescita","successo","gioia","apertura","accordo","armonia","stabilita","opportunita","recupero","guarigione","vittoria","riconoscimento","chiarezza","fiducia","avanzamento","soddisfazione","compimento","sostegno","autonomia","generosita","reciprocita","amore","unione","determinazione","abbondanza","integrazione","equilibrio","rigenerazione"];
+  const minus=["paura","dolore","conflitto","perdita","chiusura","rigidita","dipendenza","ansia","rottura","blocco","ritardo","delusione","squilibrio","manipolazione","instabilita","isolamento","stallo","eccesso","aggressivita","imprudenza","scarsita","controllo eccessivo","autoinganno"];
+  let n=0; plus.forEach(w=>{if(text.includes(w))n+=1}); minus.forEach(w=>{if(text.includes(w))n-=1});
+  if(d.card.arcana==="Maggiore") n*=1.3;
+  return n*positionWeightV10(d.position.label);
+}
+function domainInterpretationV10(d,a){
+  const m=meaning(d), id=d.card.id, suit=d.card.suit||"", pos=normalizeV4(d.position.label);
+  const prefix=/passato|radice/.test(pos)?"All'origine della situazione":/presente/.test(pos)?"Adesso":/sfida/.test(pos)?"L'ostacolo principale":/futuro|esito|possibile/.test(pos)?"La direzione verso cui tende la situazione":/prossimo/.test(pos)?"Il prossimo movimento":"Questa posizione";
+  if(a.intents.includes("risorse")) return prefix+": "+financialLensV8(d);
+  if(a.intents.includes("sessualita")){
+    const special={
+      diavolo:"desiderio fisico forte, magnetismo e pulsione, ma anche rischio di vivere il sesso come compensazione o dipendenza",
+      amanti:"attrazione e scelta reciproca; la componente fisica è collegata a una decisione relazionale",
+      forza:"energia sessuale presente ma controllata, che cresce più con fiducia che con fretta",
+      luna:"desiderio e fantasia ci sono, ma con incertezza o idealizzazione",
+      sole:"apertura, vitalità e possibilità concreta di vivere il corpo con maggiore spontaneità",
+      temperanza:"ripresa graduale dell'intimità, più lenta che esplosiva",
+      eremita:"fase di distanza o scarsa disponibilità all'incontro",
+      torre:"rottura di un equilibrio precedente e possibile svolta improvvisa",
+      morte:"chiusura di una fase sessuale vecchia e necessità di trasformare il modo in cui vivi l'intimità",
+      mondo:"compimento, sicurezza e ritorno a una dimensione fisica più completa"
+    };
+    if(special[id]) return prefix+": "+special[id]+".";
+    if(suit==="Bastoni") return prefix+": prevalgono desiderio, iniziativa e impulso; "+m+".";
+    if(suit==="Coppe") return prefix+": l'intimità dipende molto dal coinvolgimento emotivo; "+m+".";
+    if(suit==="Spade") return prefix+": pensieri, paure o tensioni mentali interferiscono con il desiderio; "+m+".";
+    if(suit==="Denari") return prefix+": contano concretezza, corpo, tempo e occasioni reali; "+m+".";
+  }
+  if(a.intents.includes("sentimenti")||a.intents.includes("relazione")||a.intents.includes("ritorno")||a.intents.includes("contatto")){
+    const special={
+      amanti:"c'è un tema forte di attrazione, scelta e compatibilità di valori",
+      diavolo:"c'è magnetismo e attaccamento, ma anche il rischio di confondere desiderio con legame sano",
+      luna:"ci sono emozioni reali ma anche ambiguità, paura o idealizzazione",
+      sole:"chiarezza, calore e disponibilità a mostrarsi senza troppi filtri",
+      stella:"apertura sincera, speranza e possibilità di ricostruire fiducia",
+      eremita:"distanza, bisogno di stare soli o difficoltà a esprimere ciò che si prova",
+      morte:"una vecchia forma del rapporto deve chiudersi perché possa nascere qualcosa di diverso",
+      torre:"una verità o una rottura cambia bruscamente il rapporto",
+      temperanza:"ricomposizione lenta, dialogo e possibilità di riequilibrio",
+      giudizio:"ritorno del passato, resa dei conti o decisione definitiva",
+      mondo:"chiusura di un ciclo e possibilità di una relazione più completa o definitivamente conclusa, a seconda del contesto"
+    };
+    if(special[id]) return prefix+": "+special[id]+".";
+    if(suit==="Coppe") return prefix+": la carta parla direttamente di emozioni e legami; "+m+".";
+    if(suit==="Spade") return prefix+": prevalgono pensieri, dubbi, comunicazione o conflitto; "+m+".";
+    if(suit==="Bastoni") return prefix+": prevalgono attrazione, impulso e iniziativa; "+m+".";
+    if(suit==="Denari") return prefix+": conta la concretezza: gesti, continuità, affidabilità; "+m+".";
+  }
+  if(a.intents.includes("lavoro")){
+    if(suit==="Denari") return prefix+": questa carta pesa molto sul piano professionale perché parla di risorse, competenza e risultati concreti; "+m+".";
+    if(suit==="Bastoni") return prefix+": indica iniziativa, ambizione, ritmo e capacità di muovere il progetto; "+m+".";
+    if(suit==="Spade") return prefix+": parla di decisioni, strategia, conflitto o comunicazione professionale; "+m+".";
+    if(suit==="Coppe") return prefix+": segnala soddisfazione, rapporti con colleghi/clienti e motivazione emotiva; "+m+".";
+  }
+  return prefix+": "+m+".";
+}
+function localTrendV10(){
+  const total=drawn.reduce((s,d)=>s+valenceV10(d),0);
+  const threshold=Math.max(1.8,drawn.length*0.65);
+  if(total>threshold) return {band:"positive",score:total};
+  if(total<-threshold) return {band:"negative",score:total};
+  return {band:"mixed",score:total};
+}
+function conflictsV10(){
+  const out=[];
+  for(let i=0;i<drawn.length-1;i++){
+    const a=drawn[i],b=drawn[i+1];
+    if(valenceV10(a)>1 && valenceV10(b)<-1) out.push(a.card.name+" apre, ma "+b.card.name+" frena");
+    if(valenceV10(a)<-1 && valenceV10(b)>1) out.push(a.card.name+" mostra il problema, mentre "+b.card.name+" introduce una via d'uscita");
+  }
+  return out.slice(0,2);
+}
+function directLocalAnswerV10(a,trend){
+  const who=a.subject==="la situazione"?"la situazione":a.subject;
+  const future=findByLabel("futuro","esito","possibile")||drawn[drawn.length-1];
+  const fName=future?future.card.name+(future.reversed?" rovesciata":""):"la carta finale";
+  const pos=trend.band==="positive", neg=trend.band==="negative";
+  if(a.intents.includes("risorse")){
+    if(pos) return "Sì, la stesa mostra una possibilità concreta di miglioramento economico, ma non come colpo di fortuna: passa da decisioni, disciplina o cambiamenti pratici. "+fName+" è la carta che pesa di più sulla direzione.";
+    if(neg) return "Al momento la stesa non mostra un miglioramento economico facile o immediato. Il punto non è 'non avrai soldi', ma che prima va corretto un nodo concreto di gestione, scelta o stabilità.";
+    return "La situazione economica può migliorare, ma la stesa non mostra un percorso lineare. Ci sono sia aperture sia freni: conta soprattutto come gestisci la scelta o il passaggio indicato dalle carte finali.";
+  }
+  if(a.intents.includes("sessualita")){
+    if(pos) return "Sì: la stesa indica che la tua vita sessuale può tornare attiva. Non la leggo come una fase chiusa definitivamente; vedo movimento, desiderio o possibilità di incontro.";
+    if(neg) return "Non vedo un incontro sessuale vicino nelle condizioni attuali, ma non significa 'mai più'. Le carte parlano di un blocco o di una fase che prima deve cambiare.";
+    return "Sì, è possibile, ma non emerge come qualcosa di immediato. C'è desiderio o possibilità, però insieme a un freno che va superato.";
+  }
+  if(a.intents.includes("sentimenti")){
+    if(pos) return "Le carte mostrano un coinvolgimento reale da parte di "+who+", anche se il modo in cui viene espresso può essere diverso da ciò che vorresti vedere.";
+    if(neg) return "Le carte non mostrano un sentimento libero e disponibile da parte di "+who+" in questo momento; prevalgono blocco, distanza o conflitto.";
+    return "Da parte di "+who+" vedo sentimenti non semplici: qualcosa c'è, ma non è lineare né completamente espresso.";
+  }
+  if(a.intents.includes("ritorno")){
+    if(pos) return "La stesa favorisce un ritorno o un riavvicinamento di "+who+", ma non come semplice ripetizione del passato: qualcosa deve cambiare.";
+    if(neg) return "Nelle condizioni attuali la stesa non sostiene un ritorno stabile di "+who+". Può esserci un movimento, ma non abbastanza per parlare di vera ripresa.";
+    return "Il ritorno di "+who+" resta possibile, ma dipende da un nodo ancora irrisolto mostrato dalle carte.";
+  }
+  if(a.intents.includes("contatto")){
+    if(pos) return "La stesa favorisce un contatto o un'iniziativa da parte di "+who+".";
+    if(neg) return "Non vedo un'iniziativa forte o vicina da parte di "+who+"; la tendenza è più di esitazione o distanza.";
+    return "Un contatto è possibile, ma non appare lineare o immediato.";
+  }
+  if(a.intents.includes("relazione")){
+    if(pos) return "La relazione con "+who+" ha una possibilità concreta di continuare o migliorare, purché venga affrontato il nodo mostrato dalla stesa.";
+    if(neg) return "Se nulla cambia, la relazione con "+who+" tende più alla distanza o al ridimensionamento che alla stabilità.";
+    return "La relazione con "+who+" è in una fase sospesa: non vedo né una chiusura netta né una conferma piena.";
+  }
+  if(a.intents.includes("lavoro")){
+    if(pos) return "La stesa è favorevole sul lavoro: mostra margine per risultato, opportunità o avanzamento.";
+    if(neg) return "Sul lavoro vedo ostacoli o rallentamenti che rendono prematuro aspettarsi un risultato facile.";
+    return "Sul lavoro c'è potenziale, ma non abbastanza per considerare il risultato già acquisito.";
+  }
+  if(a.intents.includes("decisione")){
+    if(pos) return "La stesa sostiene più il fare questa scelta che il rinunciarvi.";
+    if(neg) return "La stesa invita a non forzare questa scelta nelle condizioni attuali.";
+    return "La scelta non è sbagliata in assoluto, ma va fatta solo dopo aver chiarito il nodo centrale della stesa.";
+  }
+  if(a.intents.includes("tempo")){
+    return "Le carte non danno una data affidabile, ma il ritmo appare "+(pos?"piuttosto attivo":neg?"lento o soggetto a rinvio":"intermedio, con fasi di accelerazione e stop")+".";
+  }
+  if(a.intents.includes("salute")){
+    return "Le carte non possono fare diagnosi. Simbolicamente, la stesa parla di "+(pos?"recupero e riequilibrio":neg?"stress, rallentamento o bisogno di attenzione":"una fase da osservare senza conclusioni nette")+".";
+  }
+  if(pos) return "La risposta della stesa è prevalentemente favorevole rispetto a ciò che hai chiesto.";
+  if(neg) return "La risposta della stesa è prevalentemente prudente o contraria rispetto a ciò che hai chiesto.";
+  return "La stesa non dà un sì o un no netto: mostra una situazione ancora in evoluzione.";
+}
+function localReadingV10(question){
+  const a=localQuestionProfileV10(question),trend=localTrendV10();
+  const direct=directLocalAnswerV10(a,trend);
+  const details=drawn.map(d=>"<p><strong>"+d.position.label+" — "+d.card.name+(d.reversed?" rovesciata":"")+":</strong> "+domainInterpretationV10(d,a)+"</p>").join("");
+  const majors=drawn.filter(d=>d.card.arcana==="Maggiore");
+  let synthesis="";
+  if(majors.length>=Math.max(2,Math.ceil(drawn.length/3))) synthesis+=" Gli Arcani Maggiori sono numerosi, quindi la stesa parla più di un passaggio importante che di un dettaglio momentaneo.";
+  const conflicts=conflictsV10();
+  if(conflicts.length) synthesis+=" "+conflicts.join(". ")+".";
+  const suits={Bastoni:0,Coppe:0,Spade:0,Denari:0};drawn.forEach(d=>{if(d.card.suit)suits[d.card.suit]++});
+  const top=Object.entries(suits).sort((x,y)=>y[1]-x[1])[0];
+  if(top&&top[1]>=2){
+    const meaningMap={Bastoni:"azione, desiderio e iniziativa",Coppe:"emozioni e relazioni",Spade:"pensiero, comunicazione e tensione",Denari:"concretezza, lavoro e risorse"};
+    synthesis+=" Il seme dominante è "+top[0]+", quindi il tema insiste soprattutto su "+meaningMap[top[0]]+".";
+  }
+  return '<p class="answer-direct"><strong>'+direct+'</strong></p>'+details+(synthesis?'<p class="verdict"><strong>Sintesi:</strong>'+synthesis+'</p>':'');
+}
+function renderResult(){
+  const question=q.value.trim();
+  result.classList.remove("hidden");
+  const cardsHtml=drawn.map(d=>
+    '<article>'+resultCardThumbV7(d)+
+    '<span>'+d.position.label+'</span>'+
+    '<h4>'+d.card.name+' <small>'+(d.reversed?'rovesciata':'dritta')+'</small></h4>'+
+    '<p>'+domainInterpretationV10(d,localQuestionProfileV10(question))+'</p></article>'
+  ).join("");
+  result.innerHTML=
+    '<div class="result-head"><div><span>Lettura di Morris</span><h3>“'+escapeHtmlV9(question)+'”</h3></div><p>Stesa: <strong>'+escapeHtmlV9(spreads[currentSpread]?.name||currentSpread)+'</strong></p></div>'+
+    '<div class="deep-answer"><span>Responso di Morris</span><h4>Risposta alla tua domanda</h4>'+
+    '<div id="aiReadingText">'+localReadingV10(question)+'</div></div>'+
+    '<div class="reading">'+cardsHtml+'</div>'+
+    '<button class="reset" id="resetBtn">Nuova domanda</button>';
+  actorSayV3("Questa è la lettura delle carte uscite.",1800);
+  document.querySelector("#resetBtn").addEventListener("click",()=>{resetTable(true);actorIdleV3();document.querySelector("#lettura").scrollIntoView({behavior:"smooth"})});
+  result.scrollIntoView({behavior:"smooth",block:"start"});
+}
