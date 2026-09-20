@@ -199,3 +199,82 @@
 .deck-stage .deck-card small{
   display:none !important;
 }
+
+
+/* v16 ritual experience */
+.deck-stage.ritual-v16{touch-action:pan-y;cursor:grab}
+.deck-stage.ritual-v16:active{cursor:grabbing}
+.deck-stage.ritual-v16 .deck-card.a{transform:translate(calc(-18px + var(--shuffle-x,0px)),8px) rotate(-7deg)}
+.deck-stage.ritual-v16 .deck-card.b{transform:translate(calc(14px - var(--shuffle-x,0px)),4px) rotate(5deg)}
+.shuffle-meter-v16{
+  position:absolute;left:50%;bottom:34px;transform:translateX(-50%);
+  width:min(72%,360px);height:18px;border:1px solid #ffffff32;border-radius:999px;
+  background:#071221cc;overflow:hidden;z-index:12;box-shadow:0 8px 24px #0006
+}
+.shuffle-meter-v16 span{display:block;height:100%;width:0;background:linear-gradient(90deg,#385c91,#c77d87);transition:width .06s linear}
+.shuffle-meter-v16 b{position:absolute;inset:0;display:grid;place-items:center;font:800 9px ui-monospace,monospace;color:#fff;letter-spacing:.08em}
+
+.manual-deck-picker.fan-mode-v16{
+  display:flex;
+  align-items:end;
+  justify-content:flex-start;
+  overflow-x:auto;
+  overflow-y:hidden;
+  gap:0;
+  padding:42px max(30px,8vw) 30px;
+  scroll-snap-type:x proximity;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+  min-height:390px;
+}
+.fan-mode-v16 .manual-card-back{
+  flex:0 0 clamp(74px,9vw,104px);
+  width:clamp(74px,9vw,104px);
+  margin-left:-26px;
+  transform:translateY(var(--fan-lift,0px)) rotate(var(--fan-rot,0deg));
+  transform-origin:50% 115%;
+  scroll-snap-align:center;
+  z-index:1;
+}
+.fan-mode-v16 .manual-card-back:first-child{margin-left:0}
+.fan-mode-v16 .manual-card-back:not(:disabled):hover{
+  transform:translateY(calc(var(--fan-lift,0px) - 18px)) rotate(var(--fan-rot,0deg)) scale(1.06);
+  z-index:10;
+}
+.fan-mode-v16 .manual-card-back:not(:disabled):active{
+  transform:translateY(calc(var(--fan-lift,0px) - 10px)) rotate(var(--fan-rot,0deg)) scale(1.03)
+}
+.fan-mode-v16 .manual-card-back.chosen{
+  transform:translateY(calc(var(--fan-lift,0px) - 24px)) rotate(var(--fan-rot,0deg)) scale(1.08);
+  z-index:11;
+}
+.ritual-spread-v16 .tarot-card{position:relative}
+.reveal-aura-v16{
+  position:absolute;inset:-16px;border-radius:22px;pointer-events:none;opacity:0;
+  background:radial-gradient(circle,#d8e7ff50 0,#5f8bd530 36%,transparent 70%);
+  filter:blur(4px);z-index:-1
+}
+.cinematic-reveal-v16 .reveal-aura-v16{animation:revealAuraV16 1.15s ease-out}
+.cinematic-reveal-v16{animation:revealLiftV16 .65s cubic-bezier(.2,.75,.2,1)}
+@keyframes revealAuraV16{0%{opacity:0;transform:scale(.75)}28%{opacity:1;transform:scale(1.15)}100%{opacity:0;transform:scale(1.45)}}
+@keyframes revealLiftV16{0%{transform:translateY(0) scale(1)}45%{transform:translateY(-12px) scale(1.045)}100%{transform:translateY(0) scale(1)}}
+
+.memory-panel-v16{
+  max-width:1500px;margin:18px auto 0;padding:28px clamp(20px,4vw,44px);
+  border:1px solid #ffffff1d;border-radius:14px;background:linear-gradient(180deg,#111f34,#0d1728);
+}
+.memory-head-v16{display:flex;justify-content:space-between;align-items:end;gap:20px}
+.memory-head-v16 span{font:800 10px ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.memory-head-v16 h3{margin:8px 0 0;font-size:clamp(26px,3vw,40px);letter-spacing:-.04em}
+.memory-head-v16 button{border:1px solid #ffffff28;background:transparent;color:var(--muted);border-radius:9px;padding:10px 12px;cursor:pointer}
+.memory-panel-v16>p{color:#cfd4dd;line-height:1.65;margin:20px 0}
+.memory-strip-v16{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.memory-strip-v16 div{padding:12px;border:1px solid #ffffff12;border-radius:10px;background:#0a1423}
+.memory-strip-v16 small{display:block;color:var(--accent);font:700 9px ui-monospace,monospace;margin-bottom:6px}
+.memory-strip-v16 b{font-size:12px;line-height:1.4;color:#e8e5df}
+@media(max-width:680px){
+  .manual-deck-picker.fan-mode-v16{min-height:300px;padding:32px 22px 24px}
+  .fan-mode-v16 .manual-card-back{flex-basis:78px;width:78px;margin-left:-31px}
+  .memory-head-v16{align-items:start;flex-direction:column}
+  .memory-strip-v16{grid-template-columns:1fr}
+}
