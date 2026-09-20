@@ -72,3 +72,81 @@
 @keyframes aiPulse{0%,100%{opacity:.28;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}
 #aiReadingText p{font-size:17px;line-height:1.78;color:#d3d7df;margin:0 0 16px}
 #aiReadingText strong{color:var(--paper)}
+
+
+/* v12 manual shuffle + user card choice */
+.manual-deck-picker{
+  flex:1;
+  display:grid;
+  grid-template-columns:repeat(13,minmax(34px,1fr));
+  gap:10px 7px;
+  align-content:center;
+  padding:28px 8px 20px;
+}
+.manual-card-back{
+  position:relative;
+  aspect-ratio:2/3;
+  min-width:0;
+  border:0;
+  padding:0;
+  border-radius:8px;
+  background:none;
+  cursor:pointer;
+  perspective:700px;
+  transition:transform .16s ease,filter .16s ease,opacity .16s ease;
+}
+.manual-card-back:not(:disabled):active{transform:translateY(2px) scale(.97)}
+.manual-card-back:not(:disabled):hover{transform:translateY(-3px);filter:drop-shadow(0 8px 12px #0007)}
+.manual-back-inner{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  border-radius:8px;
+  border:1px solid #ffffff55;
+  background:
+    radial-gradient(circle at 50% 42%,transparent 0 22%,#c77d8738 23% 24%,transparent 25%),
+    repeating-linear-gradient(45deg,#ffffff0b 0 1px,transparent 1px 5px),
+    #101d30;
+  color:var(--paper);
+  box-shadow:inset 0 0 0 2px #ffffff08;
+}
+.manual-back-inner b{font-size:15px;color:var(--accent);line-height:1}
+.manual-back-inner i{font-size:10px;font-style:normal;line-height:1.1}
+.manual-back-inner small{font:700 6px ui-monospace,monospace;letter-spacing:.08em}
+.manual-card-back.chosen{
+  filter:drop-shadow(0 0 12px #c77d8799);
+  transform:translateY(-2px);
+}
+.manual-card-back.chosen .manual-back-inner{
+  border-color:var(--accent);
+  opacity:.54;
+}
+.choice-number{
+  position:absolute;
+  z-index:3;
+  left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  display:grid;
+  place-items:center;
+  width:28px;height:28px;
+  border-radius:50%;
+  background:var(--paper);
+  color:var(--bg);
+  font:900 12px/1 ui-monospace,monospace;
+  box-shadow:0 4px 12px #0008;
+}
+@media(max-width:980px){
+  .manual-deck-picker{grid-template-columns:repeat(10,minmax(30px,1fr));gap:9px 6px}
+}
+@media(max-width:680px){
+  .manual-deck-picker{grid-template-columns:repeat(7,minmax(34px,1fr));gap:8px 6px;padding:22px 2px}
+  .manual-card-back{border-radius:7px}
+  .manual-back-inner b{font-size:13px}
+  .choice-number{width:25px;height:25px;font-size:11px}
+}
+@media(max-width:390px){
+  .manual-deck-picker{grid-template-columns:repeat(6,minmax(34px,1fr));}
+}
