@@ -1748,3 +1748,105 @@ function draw(){
     actorSayV3("Scegli tu.",1300);
   },950);
 }
+
+
+// ===== MORRIS CARTOMANTE V13: card-specific final answers =====
+function cardRoleSentenceV13(d,a){
+  const label=normalizeV4(d.position.label);
+  const name=d.card.name+(d.reversed?" rovesciata":"");
+  const base=domainInterpretationV10(d,a)
+    .replace(/^All'origine della situazione:\s*/i,"")
+    .replace(/^Adesso:\s*/i,"")
+    .replace(/^L'ostacolo principale:\s*/i,"")
+    .replace(/^La direzione verso cui tende la situazione:\s*/i,"")
+    .replace(/^Il prossimo movimento:\s*/i,"")
+    .replace(/^Questa posizione:\s*/i,"")
+    .replace(/\.$/,"");
+  if(/passato|radice/.test(label)) return name+" mostra da dove nasce il problema: "+base+".";
+  if(/presente/.test(label)) return name+" descrive ciò che sta succedendo ora: "+base+".";
+  if(/sfida/.test(label)) return name+" è il nodo da superare: "+base+".";
+  if(/futuro|esito|possibile/.test(label)) return name+" indica la direzione più probabile: "+base+".";
+  if(/prossimo/.test(label)) return name+" mostra il prossimo passaggio: "+base+".";
+  return name+": "+base+".";
+}
+
+function cardSpecificDirectV13(a,trend){
+  const first=drawn[0];
+  const present=findByLabel("presente")||drawn[Math.min(1,drawn.length-1)]||first;
+  const final=findByLabel("futuro","esito","possibile")||drawn[drawn.length-1];
+  const challenge=findByLabel("sfida")||null;
+  const pos=trend.band==="positive", neg=trend.band==="negative";
+  const finalName=final.card.name+(final.reversed?" rovesciata":"");
+  const presentName=present.card.name+(present.reversed?" rovesciata":"");
+  const challengeName=challenge?challenge.card.name+(challenge.reversed?" rovesciata":""):null;
+
+  let lead="";
+  if(a.intents.includes("risorse")){
+    if(pos) lead="La stesa tende al miglioramento economico, ma il modo in cui ci arrivi dipende chiaramente dalle carte uscite.";
+    else if(neg) lead="Questa stesa è prudente sul denaro: non mostra un miglioramento semplice nelle condizioni attuali.";
+    else lead="Questa stesa sul denaro è mista: c'è margine di miglioramento, ma non senza correggere ciò che le carte stanno segnalando.";
+  } else if(a.intents.includes("sessualita")){
+    if(pos) lead="Questa stesa apre a una ripresa della vita sessuale.";
+    else if(neg) lead="Questa stesa mostra ancora un blocco concreto sul piano sessuale.";
+    else lead="Questa stesa non chiude la porta alla vita sessuale, ma la mostra ancora condizionata.";
+  } else if(a.intents.includes("sentimenti")){
+    if(pos) lead="Questa stesa mostra un coinvolgimento reale.";
+    else if(neg) lead="Questa stesa mostra più distanza o blocco che disponibilità emotiva.";
+    else lead="Questa stesa mostra sentimenti presenti ma contraddittori.";
+  } else if(a.intents.includes("ritorno")){
+    if(pos) lead="Questa stesa apre a un ritorno o riavvicinamento.";
+    else if(neg) lead="Questa stesa non sostiene un ritorno stabile nelle condizioni attuali.";
+    else lead="Questa stesa lascia il ritorno possibile, ma ancora sospeso.";
+  } else if(a.intents.includes("contatto")){
+    if(pos) lead="Questa stesa favorisce un contatto.";
+    else if(neg) lead="Questa stesa non mostra un contatto vicino o spontaneo.";
+    else lead="Questa stesa lascia possibile un contatto, ma non immediato.";
+  } else if(a.intents.includes("relazione")){
+    if(pos) lead="Questa stesa sostiene la possibilità di migliorare la relazione.";
+    else if(neg) lead="Questa stesa mostra una relazione in difficoltà.";
+    else lead="Questa stesa mostra una relazione ancora aperta ma instabile.";
+  } else if(a.intents.includes("lavoro")){
+    if(pos) lead="Questa stesa è favorevole sul lavoro.";
+    else if(neg) lead="Questa stesa mostra ostacoli o rallentamenti sul lavoro.";
+    else lead="Questa stesa mostra potenziale sul lavoro, ma con condizioni da gestire.";
+  } else {
+    lead=directLocalAnswerV10(a,trend);
+  }
+
+  let why=" ";
+  if(present===final){
+    why+=finalName+" pesa più di tutte perché chiude la stesa: "+meaning(final)+".";
+  } else {
+    why+=presentName+" descrive il presente come "+meaning(present)+", mentre "+finalName+" porta la direzione verso "+meaning(final)+".";
+  }
+  if(challenge && challenge!==present && challenge!==final){
+    why+=" Il punto critico è "+challengeName+", che introduce "+meaning(challenge)+".";
+  }
+
+  // Add one explicit interaction between cards so different spreads produce different answers.
+  const vf=valenceV10(final), vp=valenceV10(present);
+  if(vp<0 && vf>0) why+=" In altre parole: il problema c'è adesso, ma la carta finale mostra un'apertura reale.";
+  else if(vp>0 && vf<0) why+=" Qui il presente è più favorevole dell'esito: senza correzioni, la situazione può peggiorare o perdere slancio.";
+  else if(vp>0 && vf>0) why+=" Presente ed esito si sostengono a vicenda, quindi la tendenza è coerentemente favorevole.";
+  else if(vp<0 && vf<0) why+=" Presente ed esito vanno nella stessa direzione critica, quindi il blocco non appare momentaneo.";
+
+  return lead+why;
+}
+
+function localReadingV10(question){
+  const a=localQuestionProfileV10(question),trend=localTrendV10();
+  const direct=cardSpecificDirectV13(a,trend);
+  const details=drawn.map(d=>"<p><strong>"+d.position.label+" — "+d.card.name+(d.reversed?" rovesciata":"")+":</strong> "+domainInterpretationV10(d,a)+"</p>").join("");
+  const majors=drawn.filter(d=>d.card.arcana==="Maggiore");
+  let synthesis="";
+  if(majors.length>=Math.max(2,Math.ceil(drawn.length/3))) synthesis+=" Gli Arcani Maggiori sono numerosi, quindi la stesa parla più di un passaggio importante che di un dettaglio momentaneo.";
+  const conflicts=conflictsV10();
+  if(conflicts.length) synthesis+=" "+conflicts.join(". ")+".";
+  const suits={Bastoni:0,Coppe:0,Spade:0,Denari:0};drawn.forEach(d=>{if(d.card.suit)suits[d.card.suit]++});
+  const top=Object.entries(suits).sort((x,y)=>y[1]-x[1])[0];
+  if(top&&top[1]>=2){
+    const meaningMap={Bastoni:"azione, desiderio e iniziativa",Coppe:"emozioni e relazioni",Spade:"pensiero, comunicazione e tensione",Denari:"concretezza, lavoro e risorse"};
+    synthesis+=" Il seme dominante è "+top[0]+", quindi il tema insiste soprattutto su "+meaningMap[top[0]]+".";
+  }
+  return '<p class="answer-direct"><strong>'+direct+'</strong></p>'+details+(synthesis?'<p class="verdict"><strong>Sintesi:</strong>'+synthesis+'</p>':'');
+}
