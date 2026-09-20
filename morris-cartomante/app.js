@@ -1259,3 +1259,138 @@ function renderResult(){
   document.querySelector("#resetBtn").addEventListener("click",()=>{resetTable(true);actorIdleV3();document.querySelector("#lettura").scrollIntoView({behavior:"smooth"})});
   result.scrollIntoView({behavior:"smooth",block:"start"});
 }
+
+
+// ===== MORRIS CARTOMANTE V8: reject vague questions + domain-specific synthesis =====
+function vagueQuestionV8(raw){
+  const s=normalizeV4(raw).replace(/[^a-z0-9à-ÿ\s]/g," ").trim();
+  const words=s.split(/\s+/).filter(Boolean);
+  const vagueOnly=/^(soldi|denaro|amore|lavoro|salute|futuro|sesso|relazione|famiglia|fortuna|carriera|economia|finanze)$/;
+  if(vagueOnly.test(s)) return true;
+  if(words.length<3) return true;
+  return false;
+}
+function vagueExampleV8(intent){
+  const map={
+    risorse:"La mia situazione economica migliorerà nei prossimi mesi?",
+    sentimenti:"Che cosa prova davvero questa persona per me?",
+    relazione:"Come evolverà questa relazione nei prossimi mesi?",
+    lavoro:"Questo progetto di lavoro ha possibilità concrete di riuscire?",
+    sessualita:"La mia vita sessuale tornerà ad essere attiva?",
+    salute:"Che cosa posso osservare simbolicamente rispetto al mio benessere?",
+    generale:"Che cosa vuoi sapere esattamente e rispetto a quale situazione?"
+  };
+  return map[intent]||map.generale;
+}
+function financialLensV8(d){
+  const id=d.card.id, m=meaning(d), suit=d.card.suit||"";
+  const special={
+    morte:"indica una fase economica da chiudere o trasformare: un vecchio modo di guadagnare, spendere o gestire risorse non regge più come prima",
+    amanti:"parla di una scelta, un accordo, un contratto o una partnership: sui soldi conta decidere con chi e a quali condizioni impegnarsi",
+    diavolo:"segnala attaccamento, debito, spesa compulsiva, dipendenza economica o un accordo che rischia di legarti troppo",
+    torre:"indica una rottura improvvisa di equilibrio economico o una spesa/evento che obbliga a rivedere il piano",
+    ruota:"indica una fase di cambiamento e variabilità: entrate o opportunità possono muoversi, ma non sono ancora sotto pieno controllo",
+    giustizia:"parla di conti, contratti, debiti/crediti, equilibrio fra ciò che entra e ciò che esce e conseguenze di decisioni pregresse",
+    imperatore:"favorisce struttura, controllo, budget, disciplina e consolidamento",
+    imperatrice:"favorisce crescita e capacità di far rendere risorse, ma chiede di non confondere abbondanza con spesa senza misura",
+    mago:"indica capacità di creare un'opportunità economica usando competenze e risorse già disponibili",
+    carro:"indica avanzamento possibile se la gestione resta disciplinata e non dispersiva",
+    stella:"porta recupero di fiducia e possibilità di ripresa graduale, non denaro facile",
+    sole:"è un segnale di chiarezza, riuscita e miglioramento materiale più visibile",
+    mondo:"indica completamento di un ciclo con risultato concreto o consolidamento",
+    appeso:"suggerisce attesa, liquidità ferma o necessità di cambiare prospettiva prima di muovere denaro",
+    eremita:"invita a prudenza, analisi e riduzione del rischio prima di investire o spendere",
+    luna:"segnala informazioni incomplete, percezioni distorte o rischio di valutare male una situazione economica",
+    giudizio:"indica revisione dei conti e una decisione che può riaprire una fase nuova",
+    temperanza:"favorisce riequilibrio, gestione graduale e recupero attraverso misura",
+    forza:"parla di controllo degli impulsi e capacità di reggere una fase economica senza mosse emotive",
+    papa:"favorisce soluzioni tradizionali, consulenza, istituzioni, regole e accordi formalizzati",
+    papessa:"invita a non muovere denaro finché non hai tutte le informazioni",
+    imperatore:"favorisce struttura, controllo, budget e consolidamento"
+  };
+  if(special[id]) return special[id]+".";
+  if(suit==="Denari") return "è direttamente legata a risorse, stabilità, lavoro e gestione concreta: "+m+".";
+  if(suit==="Bastoni") return "sui soldi parla soprattutto di iniziativa, velocità e rischio: "+m+".";
+  if(suit==="Spade") return "sui soldi mette in primo piano decisioni, conflitti, contratti o costi mentali: "+m+".";
+  if(suit==="Coppe") return "sui soldi parla di priorità personali, relazioni, soddisfazione e scelte influenzate dall'emotività: "+m+".";
+  return m+".";
+}
+function domainCardLensV8(d,a){
+  if(a.intents.includes("risorse")) return financialLensV8(d);
+  return cardToQuestionV4(d,a);
+}
+function moneySynthesisV8(a,c){
+  const present=findByLabel("presente")||drawn[0];
+  const challenge=findByLabel("sfida");
+  const possible=findByLabel("possibile");
+  const next=findByLabel("prossimo");
+  const outcome=findByLabel("esito")||findByLabel("futuro")||drawn[drawn.length-1];
+  const parts=[];
+  if(present) parts.push("<strong>Situazione attuale:</strong> "+present.card.name+" "+financialLensV8(present));
+  if(challenge) parts.push("<strong>Ostacolo:</strong> "+challenge.card.name+" "+financialLensV8(challenge));
+  if(possible) parts.push("<strong>Possibilità:</strong> "+possible.card.name+" "+financialLensV8(possible));
+  if(next && next!==outcome) parts.push("<strong>Prossimo passaggio:</strong> "+next.card.name+" "+financialLensV8(next));
+  if(outcome) parts.push("<strong>Direzione finale:</strong> "+outcome.card.name+" "+financialLensV8(outcome));
+  return parts;
+}
+function exactAnswerV8(a,dir,c){
+  if(a.intents.includes("risorse")){
+    const parts=moneySynthesisV8(a,c);
+    const headline = dir.band==="apertura"
+      ? "La stesa mostra un miglioramento possibile, ma attraverso cambiamenti e decisioni concrete."
+      : dir.band==="chiusura"
+      ? "La stesa non mostra facilità immediata: prima va corretto un nodo economico concreto."
+      : "La stesa non dice semplicemente 'bene' o 'male': mostra una fase di transizione economica con una scelta decisiva.";
+    return "<strong>"+headline+"</strong><br><br>"+parts.join("<br><br>");
+  }
+  return exactAnswerV4(a,dir,c);
+}
+
+// override draw: do not allow meaningless one-word questions
+function draw(){
+  const question=q.value.trim();
+  const a=analyseQuestionV4(question);
+  if(!question || vagueQuestionV8(question)){
+    q.focus();
+    q.style.boxShadow="0 0 0 3px #c77d8755";
+    setTimeout(()=>q.style.boxShadow="",900);
+    oracleText.textContent="Questa domanda è troppo vaga. Morris vuole sapere esattamente cosa vuoi capire.";
+    actorSayV3("Dimmi cosa vuoi sapere davvero.",1500);
+    const hint=vagueExampleV8(a.intent);
+    q.placeholder=hint;
+    return;
+  }
+  if(drawBtn.disabled)return;
+  ensureAudio();atmospherePhrase();drawBtn.disabled=true;
+  result.classList.add("hidden");spreadArea.classList.add("hidden");spreadArea.innerHTML="";revealNote.classList.add("hidden");
+  deckStage.classList.remove("hidden");deckStage.classList.add("shuffling");actorShuffleV3();
+  oracleText.textContent="Morris legge la domanda e mescola il mazzo...";
+  const pool=shuffle([...deck]);
+  const nextDraw=spreads[currentSpread].positions.map((position,i)=>({card:pool[i],reversed:reversals.checked&&rnd()<.34,position}));
+  setTimeout(()=>{
+    drawn=nextDraw;revealed=new Set();deckStage.classList.remove("shuffling");
+    renderSpread();drawBtn.textContent="Mescola ancora";drawBtn.disabled=false;actorIdleV3();
+    oracleText.textContent="Le carte sono scelte. Morris le apre una per volta.";
+  },1250);
+}
+
+function renderResult(){
+  const question=q.value.trim(),a=analyseQuestionV4(question),dir=directionV4(),c=coreCardsV3(),notes=synthesis();
+  result.classList.remove("hidden");
+  const unique=[c.present,c.obstacle,c.final].filter((x,i,arr)=>x&&arr.indexOf(x)===i);
+  const evidence=unique.map(d=>'<div>'+resultCardThumbV7(d)+'<span>'+d.position.label+'</span><b>'+d.card.name+(d.reversed?' · rovesciata':' · dritta')+'</b></div>').join("");
+  const explanations=unique.map(d=>'<p><strong>'+d.position.label+' · '+d.card.name+':</strong> '+domainCardLensV8(d,a)+'</p>').join("");
+  result.innerHTML=
+    '<div class="result-head"><div><span>Lettura di Morris</span><h3>“'+esc(question)+'”</h3></div><p>Domanda letta come: <strong>'+a.intents.join(" + ")+'</strong></p></div>'+
+    '<div class="deep-answer"><span>Risposta diretta</span><h4>Interpretazione della stesa</h4>'+
+    '<p class="answer-direct">'+exactAnswerV8(a,dir,c)+'</p>'+
+    '<div class="evidence-grid">'+evidence+'</div>'+
+    '<div class="why">'+explanations+'</div>'+
+    (notes.length?'<p><strong>Incrocio della stesa:</strong> '+notes.join(" ")+'</p>':'')+
+    '</div>'+
+    '<div class="reading">'+drawn.map(d=>'<article>'+resultCardThumbV7(d)+'<span>'+d.position.label+'</span><h4>'+d.card.name+' <small>'+(d.reversed?'rovesciata':'dritta')+'</small></h4><p>'+domainCardLensV8(d,a)+'</p></article>').join("")+'</div>'+
+    '<button class="reset" id="resetBtn">Nuova domanda</button>';
+  actorSayV3("Adesso la risposta riguarda davvero ciò che hai chiesto.",1700);
+  document.querySelector("#resetBtn").addEventListener("click",()=>{resetTable(true);actorIdleV3();document.querySelector("#lettura").scrollIntoView({behavior:"smooth"})});
+  result.scrollIntoView({behavior:"smooth",block:"start"});
+}
