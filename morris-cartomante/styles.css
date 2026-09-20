@@ -63,3 +63,12 @@
   .result-major-thumb{width:46px}
   .major-card{max-width:138px}
 }
+
+/* v9 AI reading */
+.ai-reading-box{position:relative;overflow:hidden}
+.ai-loader{display:flex;gap:7px;align-items:center;margin:16px 0 20px}
+.ai-loader i{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:aiPulse 1s ease-in-out infinite}
+.ai-loader i:nth-child(2){animation-delay:.15s}.ai-loader i:nth-child(3){animation-delay:.3s}
+@keyframes aiPulse{0%,100%{opacity:.28;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}
+#aiReadingText p{font-size:17px;line-height:1.78;color:#d3d7df;margin:0 0 16px}
+#aiReadingText strong{color:var(--paper)}
