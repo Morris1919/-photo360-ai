@@ -150,3 +150,26 @@
 @media(max-width:390px){
   .manual-deck-picker{grid-template-columns:repeat(6,minmax(34px,1fr));}
 }
+
+
+/* v14 official Morris tarot card back */
+.card-back,
+.manual-back-inner{
+  background-image:url("https://d2jqrm6oza8nb6.cloudfront.net/datasets/5c5d5aad-3b2c-4774-8ee7-96d49abe7263.jpeg?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiMmEzYzZhZGE2ZmU2NDg4NCIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDA3MTM4Nn0.GFDedWzZBhgYLLRYLfvSEaCWzmFN3RKgqBWPlilP8Uc") !important;
+  background-size:cover !important;
+  background-position:center center !important;
+  background-repeat:no-repeat !important;
+  background-color:#07162b !important;
+  border:1px solid rgba(236,220,170,.72) !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.10),0 8px 18px rgba(0,0,0,.28) !important;
+}
+.card-back:before{display:none !important;}
+.card-back b,.card-back i,.card-back small,
+.manual-back-inner b,.manual-back-inner i,.manual-back-inner small{
+  display:none !important;
+}
+.manual-card-back.chosen .manual-back-inner{
+  opacity:.58;
+  border-color:#d7bb79 !important;
+  filter:saturate(.78) brightness(.82);
+}
