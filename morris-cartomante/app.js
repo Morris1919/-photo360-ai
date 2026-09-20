@@ -1655,3 +1655,96 @@ function renderResult(){
   document.querySelector("#resetBtn").addEventListener("click",()=>{resetTable(true);actorIdleV3();document.querySelector("#lettura").scrollIntoView({behavior:"smooth"})});
   result.scrollIntoView({behavior:"smooth",block:"start"});
 }
+
+
+// ===== MORRIS CARTOMANTE V12: the user shuffles and chooses the cards =====
+let manualDeckV12=[], manualChosenV12=[];
+
+function manualNeedV12(){ return spreads[currentSpread].positions.length; }
+
+function renderManualDeckV12(){
+  deckStage.classList.add("hidden");
+  spreadArea.className="manual-deck-picker";
+  spreadArea.innerHTML="";
+  spreadArea.classList.remove("hidden");
+  revealNote.classList.remove("hidden");
+  const need=manualNeedV12();
+  revealNote.textContent="Scegli "+need+" "+(need===1?"carta":"carte")+" dal mazzo. La prima scelta va nella prima posizione della stesa.";
+  manualDeckV12.forEach((item,index)=>{
+    const b=document.createElement("button");
+    b.type="button";
+    b.className="manual-card-back";
+    b.setAttribute("aria-label","Carta coperta "+(index+1));
+    b.innerHTML='<span class="manual-back-inner"><b>✦</b><i>☾</i><small>M</small></span>';
+    b.addEventListener("click",()=>chooseManualCardV12(index,b));
+    spreadArea.appendChild(b);
+  });
+}
+
+function chooseManualCardV12(index,button){
+  if(button.disabled || manualChosenV12.length>=manualNeedV12()) return;
+  const item=manualDeckV12[index];
+  const position=spreads[currentSpread].positions[manualChosenV12.length];
+  const chosen={card:item.card,reversed:item.reversed,position};
+  manualChosenV12.push(chosen);
+  button.disabled=true;
+  button.classList.add("chosen");
+  button.innerHTML='<span class="choice-number">'+manualChosenV12.length+'</span><span class="manual-back-inner"><b>✦</b><i>☾</i><small>M</small></span>';
+  actorSayV3("Hai scelto la carta "+manualChosenV12.length+".",850);
+  oracleText.textContent="Scelta "+manualChosenV12.length+" di "+manualNeedV12()+". "+(manualChosenV12.length<manualNeedV12()?"Scegli la prossima carta.":"La stesa è completa.");
+  if(manualChosenV12.length===manualNeedV12()){
+    drawn=manualChosenV12.slice();
+    revealed=new Set();
+    drawBtn.disabled=false;
+    drawBtn.textContent="Mischia un nuovo mazzo";
+    setTimeout(()=>{
+      renderSpread();
+      revealNote.classList.remove("hidden");
+      revealNote.textContent="Ora gira le carte che hai scelto, una alla volta.";
+      actorSayV3("Adesso girale tu.",1100);
+    },500);
+  }
+}
+
+function draw(){
+  if(drawBtn.disabled) return;
+  const question=q.value.trim();
+  if(typeof vagueQuestionV8==="function" && vagueQuestionV8(question)){
+    oracleText.textContent="Fammi una domanda un po’ più precisa prima di mischiare.";
+    q.focus();
+    return;
+  }
+  if(!question){
+    oracleText.textContent="Prima scrivi la domanda, poi mischia il mazzo.";
+    q.focus();
+    return;
+  }
+  if(musicEnabled) ensureAudio();
+  result.classList.add("hidden");
+  revealed=new Set();
+  drawn=[];
+  manualChosenV12=[];
+  drawBtn.disabled=true;
+  spreadArea.classList.add("hidden");
+  spreadArea.innerHTML="";
+  revealNote.classList.add("hidden");
+  deckStage.classList.remove("hidden");
+  deckStage.classList.add("shuffling");
+  actorShuffleV3();
+  oracleText.textContent="Mischia... il mazzo si sta rimescolando.";
+  drawBtn.textContent="Sto mischiando…";
+  const shuffled=shuffle([...deck]);
+  manualDeckV12=shuffled.map(card=>({
+    card,
+    reversed:reversals.checked && rnd()<.5
+  }));
+  setTimeout(()=>{
+    deckStage.classList.remove("shuffling");
+    actorIdleV3();
+    renderManualDeckV12();
+    drawBtn.disabled=false;
+    drawBtn.textContent="Mischia ancora";
+    oracleText.textContent="Il mazzo è davanti a te. Scegli tu le carte.";
+    actorSayV3("Scegli tu.",1300);
+  },950);
+}
