@@ -2057,3 +2057,268 @@ function renderResult(){
   result.scrollIntoView({behavior:"smooth",block:"start"});
 }
 setTimeout(renderMemoryPanelV16,0);
+
+
+// ===== MORRIS CARTOMANTE V17: premium suite =====
+const DAILY_KEY_V17="morris-cartomante-daily-v1";
+let secretModeV17=false, nightModeV17=false, oracleModeV17=false;
+
+function safeJSONV17(key,fallback){
+  try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback))}catch(e){return fallback}
+}
+function todayKeyV17(d=new Date()){
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function daysBetweenV17(a,b){
+  const [ay,am,ad]=a.split("-").map(Number),[by,bm,bd]=b.split("-").map(Number);
+  return Math.round((Date.UTC(by,bm-1,bd)-Date.UTC(ay,am-1,ad))/86400000);
+}
+function escV17(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+
+function ensurePremiumUIV17(){
+  const controls=document.querySelector(".controls");
+  if(!controls||document.querySelector("#premiumToolsV17"))return;
+  const wrap=document.createElement("div");
+  wrap.id="premiumToolsV17";
+  wrap.className="premium-tools-v17";
+  wrap.innerHTML=
+    '<div class="premium-title-v17"><span>Esperienze</span><b>Modalità Morris</b></div>'+
+    '<div class="premium-grid-v17">'+
+      '<button type="button" data-v17="daily">☀ Carta del giorno</button>'+
+      '<button type="button" data-v17="oracle">✦ Morris Oracolo</button>'+
+      '<button type="button" data-v17="builder">⌘ Crea la tua stesa</button>'+
+      '<button type="button" data-v17="stats">◌ Statistiche</button>'+
+    '</div>'+
+    '<label class="premium-switch-v17"><input type="checkbox" id="secretToggleV17"><span>Domanda segreta</span><small>Si riscopre solo alla fine</small></label>'+
+    '<label class="premium-switch-v17"><input type="checkbox" id="nightToggleV17"><span>Rituale notturno</span><small>Più lento, profondo e tattile</small></label>'+
+    '<div id="customSpreadBadgeV17" class="custom-spread-badge-v17 hidden"></div>';
+  controls.appendChild(wrap);
+  wrap.querySelector('[data-v17="daily"]').addEventListener("click",openDailyV17);
+  wrap.querySelector('[data-v17="oracle"]').addEventListener("click",runOracleV17);
+  wrap.querySelector('[data-v17="builder"]').addEventListener("click",openBuilderV17);
+  wrap.querySelector('[data-v17="stats"]').addEventListener("click",openStatsV17);
+  wrap.querySelector("#secretToggleV17").addEventListener("change",e=>{
+    secretModeV17=e.target.checked;
+    q.classList.toggle("secret-ready-v17",secretModeV17);
+    actorSayV3(secretModeV17?"La domanda resterà sigillata.":"Domanda visibile.",1100);
+  });
+  wrap.querySelector("#nightToggleV17").addEventListener("change",e=>{
+    nightModeV17=e.target.checked;
+    document.body.classList.toggle("night-ritual-v17",nightModeV17);
+    actorSayV3(nightModeV17?"Accendo il rituale notturno.":"Torniamo alla luce normale.",1200);
+    if(nightModeV17&&navigator.vibrate) navigator.vibrate([20,35,20]);
+  });
+}
+
+function ensureModalV17(){
+  let m=document.querySelector("#morrisModalV17");
+  if(m)return m;
+  m=document.createElement("div");
+  m.id="morrisModalV17";m.className="morris-modal-v17 hidden";
+  m.innerHTML='<div class="morris-modal-card-v17"><button type="button" class="morris-modal-close-v17" aria-label="Chiudi">×</button><div id="morrisModalBodyV17"></div></div>';
+  document.body.appendChild(m);
+  m.querySelector(".morris-modal-close-v17").addEventListener("click",()=>m.classList.add("hidden"));
+  m.addEventListener("click",e=>{if(e.target===m)m.classList.add("hidden")});
+  return m;
+}
+function showModalV17(html){
+  const m=ensureModalV17();m.querySelector("#morrisModalBodyV17").innerHTML=html;m.classList.remove("hidden");return m;
+}
+
+function dailyDataV17(){return safeJSONV17(DAILY_KEY_V17,{entries:[]})}
+function getDailyV17(){
+  const data=dailyDataV17(),today=todayKeyV17();
+  let entry=data.entries.find(x=>x.date===today);
+  if(!entry){
+    const pool=shuffle([...deck]);
+    const card=pool[0],reversed=rnd()<.5;
+    entry={date:today,id:card.id,name:card.name,arcana:card.arcana,suit:card.suit||null,reversed};
+    data.entries.push(entry);
+    data.entries=data.entries.slice(-120);
+    localStorage.setItem(DAILY_KEY_V17,JSON.stringify(data));
+  }
+  return {entry,data};
+}
+function dailyStreakV17(entries){
+  if(!entries.length)return 0;
+  const dates=[...new Set(entries.map(e=>e.date))].sort().reverse();
+  let streak=1;
+  if(dates[0]!==todayKeyV17())return 0;
+  for(let i=1;i<dates.length;i++){if(daysBetweenV17(dates[i],dates[i-1])===1)streak++;else break}
+  return streak;
+}
+function openDailyV17(){
+  const {entry,data}=getDailyV17(),card=deck.find(c=>c.id===entry.id),art=card?majorArt(card):"";
+  const hist=[...data.entries].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,14);
+  const streak=dailyStreakV17(data.entries);
+  const visual=art?'<img class="daily-art-v17 '+(entry.reversed?'is-reversed':'')+'" src="'+art+'" alt="'+escV17(entry.name)+'">':
+    '<div class="daily-minor-v17"><span>'+escV17(card?.arcana||"Arcano")+'</span><b>'+escV17(entry.name)+'</b><small>'+(entry.reversed?"Rovesciata":"Dritta")+'</small></div>';
+  showModalV17(
+    '<div class="modal-kicker-v17">Carta del giorno</div><h2>'+escV17(entry.name)+(entry.reversed?' · rovesciata':'')+'</h2>'+
+    '<div class="daily-layout-v17">'+visual+'<div><p class="daily-meaning-v17">'+escV17(entry.reversed?card?.reversed:card?.upright)+'</p><div class="streak-v17"><b>'+streak+'</b><span>giorni consecutivi</span></div></div></div>'+
+    '<h3>Ultimi giorni</h3><div class="daily-history-v17">'+hist.map(x=>'<div><small>'+x.date.slice(5).split("-").reverse().join("/")+'</small><b>'+escV17(x.name)+(x.reversed?' ↕':'')+'</b></div>').join("")+'</div>'
+  );
+}
+
+function openBuilderV17(){
+  const m=showModalV17(
+    '<div class="modal-kicker-v17">Spread Builder</div><h2>Crea la tua stesa</h2>'+
+    '<p>Scegli quante carte e assegna un significato a ogni posizione.</p>'+
+    '<div class="builder-count-v17"><button type="button" data-n="3" class="active">3 carte</button><button type="button" data-n="5">5 carte</button><button type="button" data-n="7">7 carte</button></div>'+
+    '<label class="builder-label-v17">Nome della stesa<input id="builderNameV17" value="La mia stesa"></label>'+
+    '<div id="builderPositionsV17"></div><button type="button" id="saveBuilderV17" class="modal-primary-v17">Usa questa stesa</button>'
+  );
+  let n=3;
+  const defaults={3:["Radice","Presente","Direzione"],5:["Situazione","Ostacolo","Radice","Consiglio","Esito"],7:["Origine","Passato","Presente","Sfida","Risorsa","Prossimo passo","Esito"]};
+  function render(){
+    m.querySelector("#builderPositionsV17").innerHTML=defaults[n].map((x,i)=>'<label class="builder-label-v17">Posizione '+(i+1)+'<input class="builder-pos-v17" value="'+escV17(x)+'"></label>').join("");
+  }
+  render();
+  m.querySelectorAll(".builder-count-v17 button").forEach(b=>b.addEventListener("click",()=>{
+    n=Number(b.dataset.n);m.querySelectorAll(".builder-count-v17 button").forEach(x=>x.classList.toggle("active",x===b));render();
+  }));
+  m.querySelector("#saveBuilderV17").addEventListener("click",()=>{
+    const name=m.querySelector("#builderNameV17").value.trim()||"Stesa personale";
+    const labels=[...m.querySelectorAll(".builder-pos-v17")].map((x,i)=>x.value.trim()||("Posizione "+(i+1)));
+    spreads.custom={name,positions:labels.map(label=>({label,focus:"il significato di "+label.toLowerCase()+" rispetto alla domanda"}))};
+    currentSpread="custom";
+    document.querySelectorAll('input[name="spread"]').forEach(x=>x.checked=false);
+    document.querySelectorAll(".spread-option").forEach(x=>x.classList.remove("active"));
+    const badge=document.querySelector("#customSpreadBadgeV17");
+    badge.textContent="Stesa attiva: "+name+" · "+n+" carte";badge.classList.remove("hidden");
+    resetTable(false);m.classList.add("hidden");actorSayV3("Stesa personale pronta.",1200);
+  });
+}
+
+function statsV17(){
+  const h=historyV16(),all=h.flatMap(r=>r.cards||[]);
+  const counts={},maj={},suits={Bastoni:0,Coppe:0,Spade:0,Denari:0};let rev=0;
+  all.forEach(c=>{counts[c.name]=(counts[c.name]||0)+1;if(c.arcana==="Maggiore")maj[c.name]=(maj[c.name]||0)+1;if(c.suit&&suits[c.suit]!=null)suits[c.suit]++;if(c.reversed)rev++});
+  return {h,all,counts,maj,suits,rev};
+}
+function openStatsV17(){
+  const s=statsV17();
+  if(!s.all.length){showModalV17('<div class="modal-kicker-v17">Statistiche</div><h2>Ancora nessuna lettura</h2><p>Fai qualche stesa e Morris inizierà a vedere le ricorrenze.</p>');return}
+  const top=Object.entries(s.counts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const topMaj=Object.entries(s.maj).sort((a,b)=>b[1]-a[1])[0];
+  const topSuit=Object.entries(s.suits).sort((a,b)=>b[1]-a[1])[0];
+  const revPct=Math.round(s.rev/s.all.length*100);
+  showModalV17(
+    '<div class="modal-kicker-v17">Statistiche del mazzo</div><h2>Il tuo archivio</h2>'+
+    '<div class="stats-grid-v17"><div><b>'+s.h.length+'</b><span>letture</span></div><div><b>'+s.all.length+'</b><span>carte estratte</span></div><div><b>'+revPct+'%</b><span>rovesciate</span></div><div><b>'+escV17(topSuit?.[0]||"—")+'</b><span>seme dominante</span></div></div>'+
+    (topMaj?'<p class="stat-highlight-v17">Arcano Maggiore più ricorrente: <strong>'+escV17(topMaj[0])+'</strong> ('+topMaj[1]+'×)</p>':'')+
+    '<h3>Carte più frequenti</h3><div class="rank-v17">'+top.map(([n,c],i)=>'<div><span>'+(i+1)+'</span><b>'+escV17(n)+'</b><small>'+c+'×</small></div>').join("")+'</div>'
+  );
+}
+
+async function runOracleV17(){
+  oracleModeV17=true;
+  if(!q.value.trim())q.value="Qual è il messaggio che Morris ha per me adesso?";
+  if(musicEnabled)ensureAudio();
+  result.classList.add("hidden");spreadArea.classList.add("hidden");deckStage.classList.remove("hidden","ritual-v16");
+  deckStage.classList.add("shuffling");actorShuffleV3();oracleText.textContent="Morris sceglie una carta per te…";
+  const item=shuffle([...deck])[0],d={card:item,reversed:reversals.checked&&rnd()<.5,position:{label:"Oracolo",focus:"il messaggio centrale"}};
+  drawn=[d];revealed=new Set();
+  setTimeout(()=>{
+    deckStage.classList.remove("shuffling");deckStage.classList.add("hidden");actorIdleV3();
+    spreadArea.className="spread-area one ritual-spread-v16";spreadArea.innerHTML="";spreadArea.classList.remove("hidden");
+    const art=majorArt(d.card);
+    const face=art?'<span class="card-front major-front '+(d.reversed?"reversed":"")+'"><img class="major-art" src="'+art+'" alt="'+d.card.name+'"><span class="major-glow"></span></span>':
+      '<span class="card-front '+(d.reversed?"reversed":"")+'"><em>'+d.card.arcana+'</em><b class="mark">'+mark(d.card)+'</b><strong>'+d.card.name+'</strong><small>'+(d.reversed?"Rovesciata":"Dritta")+'</small></span>';
+    spreadArea.innerHTML='<div class="card-slot"><span class="position-label">Morris Oracolo</span><button class="tarot-card oracle-card-v17" type="button"><span class="card-inner"><span class="card-back"></span>'+face+'</span><span class="reveal-aura-v16"></span></button></div>';
+    const btn=spreadArea.querySelector("button");revealNote.classList.remove("hidden");revealNote.textContent="Tocca la carta.";
+    btn.addEventListener("click",()=>{
+      if(btn.classList.contains("revealed"))return;
+      btn.classList.add("cinematic-reveal-v16");majorReactionV17(d);
+      setTimeout(()=>{btn.classList.add("revealed");revealed.add(0);revealNote.classList.add("hidden");setTimeout(renderResult,650)},nightModeV17?650:260);
+    });
+  },800);
+}
+
+function majorReactionV17(d){
+  if(!d)return;
+  if(navigator.vibrate) navigator.vibrate(nightModeV17?[35,40,60]:[18,24,18]);
+  if(d.card.arcana!=="Maggiore")return;
+  const phrases={
+    torre:"La Torre. Questa si sente.",
+    morte:"La Morte: qui qualcosa cambia davvero.",
+    diavolo:"Il Diavolo. Guarda bene cosa ti lega.",
+    sole:"Il Sole. Questa apre la stanza.",
+    amanti:"Gli Amanti. Qui c'è una scelta vera.",
+    luna:"La Luna. Non tutto è come sembra.",
+    stella:"La Stella. C'è spazio per respirare.",
+    giudizio:"Il Giudizio. Questa chiama una decisione.",
+    mondo:"Il Mondo. Un ciclo arriva al suo punto.",
+    eremita:"L'Eremita. Questa chiede silenzio.",
+    forza:"La Forza. Non serve spingere.",
+    appeso:"L'Appeso. Guarda la cosa al contrario."
+  };
+  actorSayV3(phrases[d.card.id]||("Un Arcano Maggiore: "+d.card.name+"."),1700);
+  document.querySelector(".table")?.classList.add("major-event-v17");
+  setTimeout(()=>document.querySelector(".table")?.classList.remove("major-event-v17"),1000);
+  if(audioCtx&&musicEnabled){
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type="sine";o.frequency.value=d.card.id==="torre"?88:174.61;
+    g.gain.setValueAtTime(.0001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(nightModeV17?.11:.07,audioCtx.currentTime+.03);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+1.2);
+    o.connect(g);g.connect(masterGain);o.start();o.stop(audioCtx.currentTime+1.25);
+  }
+}
+spreadArea.addEventListener("click",e=>{
+  const btn=e.target.closest(".tarot-card");if(!btn)return;
+  if(nightModeV17&&navigator.vibrate)navigator.vibrate([12,18,12]);
+  const buttons=[...spreadArea.querySelectorAll(".tarot-card")],idx=buttons.indexOf(btn),d=drawn[idx];
+  if(d&&!btn.dataset.reactedV17){btn.dataset.reactedV17="1";setTimeout(()=>majorReactionV17(d),nightModeV17?720:420)}
+});
+
+drawBtn.addEventListener("click",()=>{
+  if(secretModeV17){
+    q.classList.add("secret-active-v17");
+    setTimeout(()=>actorSayV3("Domanda sigillata.",900),50);
+  }
+},true);
+
+function canvasWrapV17(ctx,text,x,y,maxWidth,lineHeight,maxLines=5){
+  const words=text.split(/\s+/);let line="",lines=[];
+  for(const w of words){const test=line?line+" "+w:w;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=w}else line=test}
+  if(line)lines.push(line);lines=lines.slice(0,maxLines);
+  lines.forEach((l,i)=>ctx.fillText(l,x,y+i*lineHeight));
+  return y+lines.length*lineHeight;
+}
+async function shareReadingV17(){
+  if(!drawn.length)return;
+  const c=document.createElement("canvas");c.width=1080;c.height=1350;const x=c.getContext("2d");
+  const g=x.createLinearGradient(0,0,0,c.height);g.addColorStop(0,"#08152a");g.addColorStop(1,"#111f38");x.fillStyle=g;x.fillRect(0,0,c.width,c.height);
+  x.strokeStyle="#c8ae72";x.lineWidth=4;x.strokeRect(44,44,992,1262);
+  x.fillStyle="#d9c184";x.font="700 34px Georgia";x.fillText("MORRIS CARTOMANTE",80,110);
+  x.fillStyle="#f1ede5";x.font="700 58px Georgia";let y=190;y=canvasWrapV17(x,q.value.trim(),80,y,920,70,4)+24;
+  x.fillStyle="#9fb0c8";x.font="28px sans-serif";x.fillText("La tua stesa",80,y);y+=55;
+  x.fillStyle="#f1ede5";x.font="700 34px sans-serif";
+  drawn.forEach(d=>{y=canvasWrapV17(x,d.position.label+" — "+d.card.name+(d.reversed?" (rovesciata)":""),80,y,920,45,2)+18});
+  const answer=document.querySelector("#aiReadingText .answer-direct")?.innerText||document.querySelector("#aiReadingText")?.innerText||"";
+  y+=20;x.fillStyle="#d9c184";x.font="700 30px Georgia";x.fillText("Responso di Morris",80,y);y+=52;
+  x.fillStyle="#e3e6ec";x.font="29px sans-serif";canvasWrapV17(x,answer.replace(/\s+/g," "),80,y,920,42,9);
+  x.fillStyle="#8291a8";x.font="22px sans-serif";x.fillText("morris-cartomante.onrender.com",80,1270);
+  const blob=await new Promise(r=>c.toBlob(r,"image/png",.95));if(!blob)return;
+  const file=new File([blob],"morris-cartomante-lettura.png",{type:"image/png"});
+  if(navigator.share&&navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:"Morris Cartomante",text:"La mia lettura di Morris"});return}catch(e){}}
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+
+const renderResultV17Base=renderResult;
+renderResult=function(){
+  q.classList.remove("secret-active-v17");
+  renderResultV17Base();
+  const btns=document.createElement("div");btns.className="result-actions-v17";
+  btns.innerHTML='<button type="button" id="shareReadingV17">▣ Salva / condividi</button><button type="button" id="statsReadingV17">◌ Statistiche</button>';
+  result.appendChild(btns);
+  btns.querySelector("#shareReadingV17").addEventListener("click",shareReadingV17);
+  btns.querySelector("#statsReadingV17").addEventListener("click",openStatsV17);
+  if(oracleModeV17){
+    const trend=localTrendV10();
+    const label=trend.band==="positive"?"APERTURA":trend.band==="negative"?"CAUTELA":"SVOLTA";
+    const d=drawn[0];
+    result.querySelector(".deep-answer")?.insertAdjacentHTML("afterbegin",'<div class="oracle-verdict-v17">'+label+' · '+escV17(d.card.name)+(d.reversed?' ROVESCIATA':'')+'</div>');
+    oracleModeV17=false;
+  }
+};
+
+setTimeout(ensurePremiumUIV17,0);
