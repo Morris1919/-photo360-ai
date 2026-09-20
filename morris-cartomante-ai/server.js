@@ -26,7 +26,13 @@ function extractText(data){
   return parts.join("\n").trim();
 }
 function makePrompt(body){
-  const cards=(body.cards||[]).map((x,i)=>
+  const list=body.cards||[];
+  const majorCount=list.filter(x=>x.arcana==="Maggiore").length;
+  const reversedCount=list.filter(x=>x.reversed).length;
+  const suitCounts={Bastoni:0,Coppe:0,Spade:0,Denari:0};
+  for(const x of list){ if(x.suit && suitCounts[x.suit]!==undefined) suitCounts[x.suit]++; }
+  const dominantSuit=Object.entries(suitCounts).sort((a,b)=>b[1]-a[1])[0];
+  const cards=list.map((x,i)=>
     (i+1)+". "+x.position+": "+x.name+" — "+(x.reversed?"ROVESCIATA":"DRITTA")+
     ". Significato-base: "+x.meaning+
     (x.suit?(". Seme: "+x.suit+"."):"")+
@@ -40,11 +46,23 @@ STESA: ${body.spreadName||"Tarocchi"}
 CARTE:
 ${cards}
 
+STRUTTURA DELLA STESA:
+- Arcani Maggiori: ${majorCount} su ${list.length}
+- Carte rovesciate: ${reversedCount} su ${list.length}
+- Semi: Bastoni ${suitCounts.Bastoni}, Coppe ${suitCounts.Coppe}, Spade ${suitCounts.Spade}, Denari ${suitCounts.Denari}
+- Seme dominante: ${dominantSuit && dominantSuit[1]>0 ? dominantSuit[0] : "nessuno"}
+
 ISTRUZIONI:
 Rispondi ESATTAMENTE alla domanda sopra. Non cambiare argomento e non rifugiarti in formule generiche.
+La risposta DEVE derivare dalle carte fornite: non puoi introdurre una conclusione importante che non sia sostenuta da almeno una carta specifica della stesa.
+Cita esplicitamente per nome le carte su cui basi ogni conclusione centrale e spiega perché quella carta, IN QUELLA POSIZIONE e con QUELL'ORIENTAMENTO, porta a quella lettura.
+Nella stesa a tre carte devi collegare tutte e tre le carte fra loro. Nella Croce Celtica devi usare almeno le posizioni chiave (Presente, Sfida, Radice, Prossimo passo, Esito) e integrare le altre quando cambiano il senso.
+Non usare il significato-base come una definizione isolata: interpretalo rispetto alla domanda precisa.
+Se due carte si contraddicono, non scegliere arbitrariamente una delle due: spiega la tensione e quale posizione pesa di più.
+Se gli Arcani Maggiori sono numerosi, segnalalo e fai pesare maggiormente quelle carte nella sintesi.
 Leggi le carte come un insieme: posizione, orientamento, ripetizioni, Arcani Maggiori, semi dominanti, contrasti e progressione della stesa.
 Se la domanda ha più parti, rispondi a ogni parte separatamente.
-Apri con un responso diretto di 2-4 frasi, poi spiega perché carta per carta e infine fai una sintesi complessiva.
+Apri con un responso diretto di 2-4 frasi che risponda alla domanda, poi scrivi una spiegazione aderente alle carte e infine una sintesi complessiva. Evita formule prefabbricate come "la stesa è favorevole" se non specifichi subito favorevole A COSA e QUALI CARTE lo mostrano.
 Usa il nome "Morris" come voce del cartomante solo occasionalmente, senza trasformare tutto in una gag.
 Tono: cartomante esperto, caldo, suggestivo, concreto, adulto, naturale. Italiano fluido. Niente gergo tecnico da AI.
 Non dire "in generale", "quadro equilibrato", "esito condizionato" senza spiegare concretamente COSA significa per questa domanda.
