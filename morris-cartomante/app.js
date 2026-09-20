@@ -995,3 +995,70 @@ function cardToQuestionV4(d,a){
   }
   return role+": <strong>"+m+"</strong>."+tail;
 }
+
+
+
+// ===== MORRIS CARTOMANTE V7: hard-route the final answer from the actual question text =====
+function classifyDirectV7(raw){
+  const s=normalizeV4(raw);
+  const intents=[];
+  const add=x=>{if(!intents.includes(x))intents.push(x)};
+  if(/sesso|sessuale|fare l'amore|intimit|scopare|scopero|incontro erotico|desiderio fisico|rapporto fisico/.test(s))add("intimita");
+  if(/mi ama|innamorat|cosa prova|cosa sente|sentiment|attraz|gli piaccio|le piaccio/.test(s))add("sentimenti");
+  if(/vede un futuro|futuro con|staremo insieme|relazione|rapporto|coppia|lascer|separ/.test(s))add("relazione");
+  if(/torner|ritorner|riavvicin/.test(s))add("ritorno");
+  if(/mi scriver|mi chiam|mi contatt|mi cercher|si fara sentire|si fara vivo/.test(s))add("contatto");
+  if(/tradisc|tradiment|fedele|mentendo|mi mente|nasconde|sincer/.test(s))add("fiducia");
+  if(/lavor|carriera|cliente|contratto|assunt|posto|occupaz|profession|progetto/.test(s))add("lavoro");
+  if(/sold|denar|econom|finanz|guadagn|incass|entrate|spese|pagamento/.test(s))add("risorse");
+  if(/devo|dovrei|conviene|scelta|scegli|decision|faccio bene|vale la pena/.test(s))add("decisione");
+  if(/quando|quanto tempo|entro quando/.test(s))add("tempo");
+  if(/succeder|evolver|svilupp|andra|come finira/.test(s))add("sviluppo");
+  return intents.length?intents:["generale"];
+}
+
+function intimateAnswerV7(dir,c){
+  const finalName=c.final?c.final.card.name+(c.final.reversed?" rovesciata":""):"la carta finale";
+  const presentName=c.present?c.present.card.name+(c.present.reversed?" rovesciata":""):"la carta del presente";
+  if(dir.band==="apertura"){
+    return "<strong>Sì: le carte indicano che avrai ancora vita sessuale.</strong> La stesa mostra possibilità concreta di intimità e contatto fisico, non una chiusura. "+presentName+" descrive la fase attuale; "+finalName+" porta la lettura verso riattivazione, incontro o disponibilità maggiore.";
+  }
+  if(dir.band==="chiusura"){
+    return "<strong>La stesa non dice “mai più”, ma in questo momento il sesso appare rallentato o ostacolato.</strong> Quindi alla domanda “Farò ancora sesso?” Morris risponde: <strong>sì, ma non facilmente o non nell'immediato</strong>. "+finalName+" è la carta che spiega il blocco o il ritardo.";
+  }
+  return "<strong>Sì, la possibilità di avere ancora rapporti sessuali c'è.</strong> La stesa però non la mostra come immediata: c'è desiderio o potenziale, ma anche qualcosa che frena la concretizzazione. Il passaggio fra "+presentName+" e "+finalName+" dice che l'intimità torna quando cambia la situazione attuale.";
+}
+
+function directIntentAnswerV7(intent,a,dir,c){
+  if(intent==="intimita")return intimateAnswerV7(dir,c);
+  return answerForIntentV5(intent,a,dir,c);
+}
+
+function renderResult(){
+  const question=q.value.trim();
+  const intents=classifyDirectV7(question);
+  const a={...analyseQuestionV4(question),intents,intent:intents[0]};
+  const dir=directionV4(),c=coreCardsV3(),notes=synthesis();
+  result.classList.remove("hidden");
+
+  const unique=[c.present,c.obstacle,c.final].filter((x,i,arr)=>x&&arr.indexOf(x)===i);
+  const evidence=unique.map(d=>'<div><span>'+d.position.label+'</span><b>'+d.card.name+(d.reversed?' · rovesciata':' · dritta')+'</b></div>').join("");
+  const explanations=unique.map(d=>'<p><strong>'+d.position.label+' · '+d.card.name+':</strong> '+cardToQuestionV4(d,a)+'</p>').join("");
+  const answers=intents.map(i=>directIntentAnswerV7(i,a,dir,c)).join("<br><br>");
+
+  result.innerHTML=
+    '<div class="result-head"><div><span>Lettura di Morris</span><h3>“'+esc(question)+'”</h3></div><p>Domanda letta come: <strong>'+intents.join(" + ")+'</strong></p></div>'+
+    '<div class="deep-answer"><span>Risposta diretta</span><h4>'+(dir.band==="apertura"?"Apertura":dir.band==="chiusura"?"Cautela o ritardo":"Esito condizionato")+'</h4>'+
+    '<p class="answer-direct">'+answers+'</p>'+
+    '<div class="evidence-grid">'+evidence+'</div>'+
+    '<div class="why">'+explanations+'</div>'+
+    (notes.length?'<p><strong>Incrocio della stesa:</strong> '+notes.join(" ")+'</p>':'')+
+    '<p class="verdict"><strong>Conclusione:</strong> Morris ha risposto al tema reale della tua domanda: <strong>'+intents.join(" + ")+'</strong>. Non viene più usato il fallback generico quando il tema è riconoscibile.</p></div>'+
+    '<div class="reading">'+drawn.map(d=>'<article><span>'+d.position.label+'</span><h4>'+d.card.name+' <small>'+(d.reversed?'rovesciata':'dritta')+'</small></h4><p>'+cardToQuestionV4(d,a)+'</p></article>').join("")+'</div>'+
+    '<div class="synthesis"><img src="'+MORRIS_IMG+'" alt=""><div><span>Morris</span><p>'+answers+'</p><p class="final">È una lettura simbolica, non una certezza fattuale sul futuro.</p></div></div>'+
+    '<button class="reset" id="resetBtn">Nuova domanda</button>';
+
+  actorSayV3("Ti rispondo proprio a questo.",1600);
+  document.querySelector("#resetBtn").addEventListener("click",()=>{resetTable(true);actorIdleV3();document.querySelector("#lettura").scrollIntoView({behavior:"smooth"})});
+  result.scrollIntoView({behavior:"smooth",block:"start"});
+}
