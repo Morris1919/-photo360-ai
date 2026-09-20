@@ -597,3 +597,173 @@ function renderResult(){
   result.scrollIntoView({behavior:"smooth",block:"start"});
 }
 actorIdleV3();
+
+
+
+// ===== MORRIS CARTOMANTE V4: direct question answering + louder atmosphere =====
+if(volumeSliderV3) volumeSliderV3.value="88";
+
+function volumeTargetV3(){
+  const v=volumeSliderV3?Number(volumeSliderV3.value)/100:.88;
+  return Math.max(.28,Math.min(.92,.24+v*.78));
+}
+function startDrone(){
+  droneStarted=true;
+  const bus=audioCtx.createGain(); bus.gain.value=.42; bus.connect(masterGain);
+  const filter=audioCtx.createBiquadFilter();filter.type="lowpass";filter.frequency.value=760;filter.Q.value=.7;filter.connect(bus);
+  [[73.42,"sine",.44],[110,"triangle",.22],[146.83,"sine",.12],[220,"sine",.045]].forEach(([freq,type,gain])=>{
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.type=type;o.frequency.value=freq;g.gain.value=gain;o.connect(g);g.connect(filter);o.start();
+  });
+  const seconds=2,buffer=audioCtx.createBuffer(1,audioCtx.sampleRate*seconds,audioCtx.sampleRate),data=buffer.getChannelData(0);
+  let last=0;
+  for(let i=0;i<data.length;i++){const white=Math.random()*2-1;last=(last+.018*white)/1.018;data[i]=last*2.1}
+  const noise=audioCtx.createBufferSource(),ng=audioCtx.createGain(),nf=audioCtx.createBiquadFilter();
+  noise.buffer=buffer;noise.loop=true;ng.gain.value=.06;nf.type="lowpass";nf.frequency.value=1200;
+  noise.connect(nf);nf.connect(ng);ng.connect(bus);noise.start();
+  fadeMaster(musicEnabled?volumeTargetV3():.0001,.45);
+  setTimeout(()=>atmospherePhrase(),180);
+}
+function atmospherePhrase(){
+  if(!musicEnabled||!audioCtx)return;
+  const now=audioCtx.currentTime+.03;
+  const seq=[146.83,174.61,196,220,261.63,293.66];
+  const base=seq[Math.floor(rnd()*seq.length)];
+  bell(base,now,3.9,.18);
+  bell(base*1.5,now+.9,3.1,.10);
+  if(rnd()>.35) bell(seq[Math.floor(rnd()*seq.length)]*2,now+2.05,2.2,.075);
+}
+
+function normalizeV4(s){return (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
+function extractSubjectV4(raw){
+  const s=raw.trim();
+  const patterns=[
+    /(?:se|quando|perche|perché|cosa prova|cosa sente|mi ama|mi cerchera|mi cercherà|tornera|tornerà|ritornera|ritornerà)\s+([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{2,})/i,
+    /\b([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{2,})\s+(?:mi ama|mi vuole|tornera|tornerà|mi cerchera|mi cercherà|prova|sente|pensa)/,
+    /(?:con|tra me e|io e)\s+([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{2,})/i,
+    /\b(mio figlio|mia figlia|mio marito|mia moglie|il mio compagno|la mia compagna|il mio ex|la mia ex)\b/i
+  ];
+  for(const p of patterns){const m=s.match(p);if(m)return m[1]}
+  const caps=(s.match(/\b[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{2,}\b/g)||[]).filter(x=>!["Morris","Come","Cosa","Quando","Perché","Perche","Secondo","Dimmi","Vorrei","Voglio"].includes(x));
+  return caps[0]||"la situazione";
+}
+function intentV4(raw){
+  const s=normalizeV4(raw);
+  if(/mi ama|ama me|innamorat|cosa prova|cosa sente|sentiment|attraz|gli piaccio|le piaccio/.test(s))return"sentimenti";
+  if(/torner|ritorner|riavvicin|tornare insieme/.test(s))return"ritorno";
+  if(/mi scriver|mi chiam|mi contatt|mi cercher|si fara sentire|si fara vivo/.test(s))return"contatto";
+  if(/tradisc|tradiment|fedele|mentendo|mi mente|nasconde|sincer/.test(s))return"fiducia";
+  if(/staremo insieme|relazione|rapporto|coppia|lascer|separ|futuro con/.test(s))return"relazione";
+  if(/lavor|carriera|cliente|contratto|assunt|posto|occupaz|profession|progetto/.test(s))return"lavoro";
+  if(/sold|denar|econom|finanz|guadagn|incass|entrate|spese|pagamento/.test(s))return"risorse";
+  if(/salute|malatt|guarir|medic|diagnos|sintom/.test(s))return"salute";
+  if(/devo|dovrei|conviene|scelta|scegli|decision|faccio bene|vale la pena/.test(s))return"decisione";
+  if(/quando|quanto tempo|entro quando/.test(s))return"tempo";
+  if(/succeder|evolver|svilupp|andra|futuro|come finira/.test(s))return"sviluppo";
+  return"generale";
+}
+function keywordsV4(raw){
+  const stop=new Set(["come","cosa","quando","perche","perché","secondo","dimmi","vorrei","voglio","sapere","sara","sarà","sono","sei","sia","che","con","per","una","uno","del","della","delle","degli","dei","il","lo","la","i","gli","le","mi","ti","si","ci","me","te","lui","lei","mio","mia","miei","mie","suo","sua","suoi","sue","questo","questa","quello","quella","davvero","ancora","poi"]);
+  return normalizeV4(raw).replace(/[^a-z0-9à-ÿ\s]/g," ").split(/\s+/).filter(w=>w.length>3&&!stop.has(w)).slice(0,6);
+}
+function analyseQuestionV4(raw){
+  return{raw:raw.trim(),norm:normalizeV4(raw),intent:intentV4(raw),subject:extractSubjectV4(raw),domain:topic(raw),keywords:keywordsV4(raw)}
+}
+function suitToneV4(){
+  const counts={Coppe:0,Spade:0,Bastoni:0,Denari:0};
+  drawn.forEach(d=>{if(d.card.suit)counts[d.card.suit]++});
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
+}
+function emotionalNuanceV4(){
+  const suit=suitToneV4();
+  if(suit==="Coppe")return"la componente emotiva è forte: qui contano legame, sensibilità e ciò che viene sentito";
+  if(suit==="Spade")return"la componente mentale è dominante: pensieri, dubbi, parole e decisioni pesano più dell'istinto";
+  if(suit==="Bastoni")return"la componente impulsiva è dominante: attrazione, iniziativa e desiderio di muoversi sono centrali";
+  return"la componente concreta è dominante: contano stabilità, gesti reali, tempi e affidabilità";
+}
+function directionV4(){
+  const raw=drawn.reduce((sum,d)=>sum+cardScoreV3(d),0);
+  const denom=Math.max(2.5,drawn.length*1.6);
+  const norm=Math.max(-1,Math.min(1,raw/denom));
+  return{raw,norm,band:norm>.18?"apertura":norm<-.18?"chiusura":"incerto",strength:Math.abs(norm)>.48?"netta":"moderata"};
+}
+function exactAnswerV4(a,dir,c){
+  const s=a.subject==="la situazione"?"questa situazione":a.subject;
+  const finalName=c.final?c.final.card.name+(c.final.reversed?" rovesciata":""):"la carta finale";
+  const presentName=c.present?c.present.card.name+(c.present.reversed?" rovesciata":""):"la carta del presente";
+  const yes=dir.band==="apertura", no=dir.band==="chiusura";
+  const hedge=dir.strength==="netta"?"in modo abbastanza netto":"con qualche condizione";
+  switch(a.intent){
+    case"sentimenti":
+      if(yes)return"<strong>Sì, le carte mostrano un coinvolgimento reale di "+s+" verso di te</strong>, "+hedge+". "+emotionalNuanceV4()+". "+presentName+" descrive ciò che è vivo adesso; "+finalName+" mostra come quel sentimento tende a svilupparsi.";
+      if(no)return"<strong>Le carte non mostrano un sentimento libero e pienamente disponibile da parte di "+s+"</strong>. C'è più blocco, distanza o conflitto che apertura lineare. "+finalName+" pesa molto su questa conclusione.";
+      return"<strong>Le carte mostrano sentimenti ambivalenti da parte di "+s+"</strong>: qualcosa c'è, ma non emerge come semplice, stabile e completamente espresso. "+presentName+" e "+finalName+" vanno in direzioni diverse.";
+    case"ritorno":
+      if(yes)return"<strong>La stesa tende al ritorno o al riavvicinamento di "+s+"</strong>, "+hedge+". Non leggo però un semplice ritorno al passato: "+finalName+" indica che qualcosa nel modo di stare in rapporto deve cambiare.";
+      if(no)return"<strong>La stesa non indica, nelle condizioni attuali, un ritorno stabile di "+s+"</strong>. Può esserci un ripensamento o un movimento, ma "+finalName+" non sostiene una vera ripresa.";
+      return"<strong>Il ritorno di "+s+" è possibile ma non ancora deciso dalle dinamiche attuali</strong>. La stesa mostra apertura e freno insieme: il nodo fra "+presentName+" e "+finalName+" deve prima sciogliersi.";
+    case"contatto":
+      if(yes)return"<strong>Le carte favoriscono un contatto da parte di "+s+"</strong>. La lettura, però, distingue il gesto del cercarti dalla qualità di ciò che viene dopo: "+finalName+" dice se il contatto può avere seguito.";
+      if(no)return"<strong>Non vedo un'iniziativa forte o vicina da parte di "+s+"</strong>. La tendenza è più di esitazione, distanza o rinvio che di contatto concreto.";
+      return"<strong>Un contatto di "+s+" è possibile, ma non lineare</strong>: la stesa mostra esitazione o condizioni non ancora mature.";
+    case"fiducia":
+      return"<strong>Le carte non possono accertare se "+s+" mente, tradisce o nasconde un fatto.</strong> Simbolicamente, però, "+(yes?"il quadro è più trasparente e orientato al chiarimento":"il quadro contiene opacità, tensione o incoerenze che meritano verifica nei comportamenti reali")+". "+finalName+" è il segnale più importante.";
+    case"relazione":
+      if(yes)return"<strong>La relazione con "+s+" ha una tendenza di continuità o miglioramento</strong>, "+hedge+". "+presentName+" fotografa il presente, mentre "+finalName+" mostra una direzione più costruttiva.";
+      if(no)return"<strong>La relazione con "+s+" tende a distanza, ridimensionamento o chiusura se nulla cambia</strong>. "+finalName+" non sostiene una continuità serena nelle condizioni attuali.";
+      return"<strong>La relazione con "+s+" è in una fase sospesa</strong>: non vedo né una chiusura netta né una conferma piena. Il punto decisivo è ciò che separa "+presentName+" da "+finalName+".";
+    case"lavoro":
+      if(yes)return"<strong>Rispetto alla tua domanda sul lavoro, la stesa è favorevole</strong>: mostra margine di sviluppo, risultato o opportunità concreta. "+finalName+" è la carta che porta più peso sull'esito.";
+      if(no)return"<strong>Rispetto alla tua domanda sul lavoro, la stesa invita alla cautela</strong>: vedo ostacoli, rallentamenti o condizioni non ancora solide. "+finalName+" spiega perché.";
+      return"<strong>Sul lavoro la risposta è condizionata</strong>: c'è potenziale, ma non abbastanza per considerare il risultato già acquisito. "+presentName+" e "+finalName+" mostrano cosa deve cambiare.";
+    case"risorse":
+      if(yes)return"<strong>Sul piano economico la stesa tende a stabilizzazione o miglioramento</strong>, purché resti attenzione alla gestione concreta. "+finalName+" sostiene questa direzione.";
+      if(no)return"<strong>Sul piano economico la stesa chiede prudenza</strong>: segnala ritardi, pressione o rischio di dispersione delle risorse. "+finalName+" è il punto più critico.";
+      return"<strong>Sul piano economico il quadro è misto</strong>: non vedo né forte crescita né allarme netto, ma una fase da gestire con precisione.";
+    case"salute":
+      return"<strong>Questa stesa non può dire se hai una malattia, se guarirai o sostituire un parere medico.</strong> Sul piano simbolico, le carte descrivono "+(yes?"recupero, energia e riequilibrio":"stress, rallentamento o bisogno di attenzione")+". Per sintomi o diagnosi conta la valutazione sanitaria reale.";
+    case"decisione":
+      if(yes)return"<strong>La stesa sostiene più il fare questa scelta che il rinunciarvi</strong>, "+hedge+". "+finalName+" mostra il beneficio potenziale della direzione.";
+      if(no)return"<strong>La stesa sconsiglia di forzare questa scelta nelle condizioni attuali</strong>. "+finalName+" indica un costo, un blocco o una conseguenza che merita più attenzione.";
+      return"<strong>La stesa non dà un sì pieno alla scelta</strong>: la rende possibile, ma solo dopo aver chiarito il nodo mostrato dal presente.";
+    case"tempo":
+      return"<strong>Le carte non danno una data affidabile.</strong> Possono però mostrare il ritmo: in questa stesa il movimento appare "+(yes?"piuttosto attivo e vicino":"lento, trattenuto o soggetto a rinvio")+". "+finalName+" è il principale indicatore del ritmo.";
+    case"sviluppo":
+      if(yes)return"<strong>La situazione tende a evolvere in senso favorevole</strong>, "+hedge+". "+presentName+" mostra da dove parte; "+finalName+" dove tende.";
+      if(no)return"<strong>La situazione tende a rallentare, chiudersi o complicarsi se le dinamiche restano invariate</strong>. "+finalName+" è il segnale principale di questa direzione.";
+      return"<strong>L'evoluzione resta aperta e condizionata</strong>: la stesa non conferma ancora un esito unico. Il passaggio fra "+presentName+" e "+finalName+" è decisivo.";
+    default:
+      return"<strong>Alla domanda “"+esc(a.raw)+"” la stesa risponde in modo "+(yes?"prevalentemente favorevole":no?"prevalentemente contrario o prudente":"condizionato")+"</strong>. I punti della domanda che pesano di più sono: "+(a.keywords.length?a.keywords.join(", "):"la dinamica centrale")+".";
+  }
+}
+function cardToQuestionV4(d,a){
+  const pos=d.position.label.toLowerCase(),m=meaning(d),subject=a.subject==="la situazione"?"la situazione":a.subject;
+  let role="aggiunge un elemento alla risposta";
+  if(/passato|radice/.test(pos))role="spiega cosa ha creato il problema o la possibilità che stai chiedendo";
+  else if(/presente/.test(pos))role="descrive ciò che è realmente attivo adesso nella tua domanda";
+  else if(/sfida/.test(pos))role="indica l'ostacolo specifico che può cambiare la risposta";
+  else if(/futuro|esito|possibile/.test(pos))role="mostra dove tende "+subject+" rispetto a ciò che hai chiesto";
+  else if(/prossimo/.test(pos))role="indica il prossimo movimento concreto";
+  return role+": <strong>"+m+"</strong>.";
+}
+function renderResult(){
+  const question=q.value.trim(),a=analyseQuestionV4(question),dir=directionV4(),c=coreCardsV3(),notes=synthesis();
+  result.classList.remove("hidden");
+  const unique=[c.present,c.obstacle,c.final].filter((x,i,arr)=>x&&arr.indexOf(x)===i);
+  const evidence=unique.map(d=>'<div><span>'+d.position.label+'</span><b>'+d.card.name+(d.reversed?' · rovesciata':' · dritta')+'</b></div>').join("");
+  const explanations=unique.map(d=>'<p><strong>'+d.position.label+' · '+d.card.name+':</strong> '+cardToQuestionV4(d,a)+'</p>').join("");
+  result.innerHTML=
+    '<div class="result-head"><div><span>Lettura di Morris</span><h3>“'+esc(question)+'”</h3></div><p>Domanda interpretata come: <strong>'+a.intent+'</strong></p></div>'+
+    '<div class="deep-answer"><span>Risposta diretta</span><h4>'+(dir.band==="apertura"?"Apertura":dir.band==="chiusura"?"Cautela o chiusura":"Esito condizionato")+'</h4>'+
+    '<p class="answer-direct">'+exactAnswerV4(a,dir,c)+'</p>'+
+    '<div class="evidence-grid">'+evidence+'</div>'+
+    '<div class="why">'+explanations+'</div>'+
+    (notes.length?'<p><strong>Incrocio della stesa:</strong> '+notes.join(" ")+'</p>':'')+
+    '<p class="verdict"><strong>Conclusione:</strong> la risposta qui sopra è riferita alla domanda che hai scritto. Le carte vengono lette nel ruolo che hanno dentro quella domanda, non come definizioni generiche isolate.</p></div>'+
+    '<div class="reading">'+drawn.map(d=>'<article><span>'+d.position.label+'</span><h4>'+d.card.name+' <small>'+(d.reversed?'rovesciata':'dritta')+'</small></h4><p>'+cardToQuestionV4(d,a)+'</p></article>').join("")+'</div>'+
+    '<div class="synthesis"><img src="'+MORRIS_IMG+'" alt=""><div><span>Morris</span><p>'+exactAnswerV4(a,dir,c)+'</p><p class="final">È una lettura simbolica della domanda, non una certezza fattuale sul futuro.</p></div></div>'+
+    '<button class="reset" id="resetBtn">Nuova domanda</button>';
+  actorSayV3("Adesso ti rispondo alla domanda.",1600);
+  document.querySelector("#resetBtn").addEventListener("click",()=>{resetTable(true);actorIdleV3();document.querySelector("#lettura").scrollIntoView({behavior:"smooth"})});
+  result.scrollIntoView({behavior:"smooth",block:"start"});
+}
