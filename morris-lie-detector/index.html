@@ -194,9 +194,9 @@ function buildCase(){
  var sc=scenarios[type], cfg=difficultyCfg($("difficulty").value), chosen=shuffle(names).slice(0,5), culprit=rand(5), crimePlace=sc.places[rand(sc.places.length)];
  var honestPlaces=shuffle(sc.places.filter(function(p){return p!==crimePlace}));
  var suspects=chosen.map(function(x,i){
-   var isC=i===culprit, realPlace=isC?crimePlace:honestPlaces[i%honestPlaces.length], touched=isC || Math.random()<.22, motive=isC?2:(Math.random()<.45?1:0);
+   var isC=i===culprit, realPlace=isC?crimePlace:honestPlaces[i%honestPlaces.length], claimedPlace=isC?shuffle(sc.places.filter(function(p){return p!==crimePlace}))[0]:realPlace, touched=isC || Math.random()<.22, motive=isC?2:(Math.random()<.45?1:0);
    var q=[
-    {key:"place",text:"«Al momento del fatto ero in "+realPlace+".»",detail:"Verifica l'alibi dichiarato.",truth:!isC,weight:3},
+    {key:"place",text:"«Al momento del fatto ero in "+claimedPlace+".»",detail:"Verifica l'alibi dichiarato.",truth:!isC,weight:3},
     {key:"object",text:"«Non ho mai toccato "+sc.object+".»",detail:"Controlla il contatto con l'oggetto chiave.",truth:!touched,weight:2},
     {key:"motive",text:"«Non avevo alcun motivo per danneggiare "+sc.victim+".»",detail:"Confronta movente e rapporti personali.",truth:motive===0,weight:1}
    ];
