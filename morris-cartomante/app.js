@@ -46,7 +46,7 @@ document.querySelectorAll('input[name="spread"]').forEach(r=>r.addEventListener(
 drawBtn.addEventListener("click",draw);
 function rnd(){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]/4294967296}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function draw(){const pool=shuffle([...deck]);drawn=spreads[currentSpread].positions.map((position,i)=>({card:pool[i],reversed:reversals.checked&&rnd()<.34,position}));revealed=new Set();renderSpread();drawBtn.textContent="Mescola ancora";oracleText.textContent="Una alla volta. Non correre davanti alle carte."}
+function draw(){const pool=shuffle([...deck]);drawn=spreads[currentSpread].positions.map((position,i)=>({card:pool[i],reversed:reversals.checked&&rnd()<.5,position}));revealed=new Set();renderSpread();drawBtn.textContent="Mescola ancora";oracleText.textContent="Una alla volta. Non correre davanti alle carte."}
 function resetTable(clearQuestion=true){drawn=[];revealed=new Set();deckStage.classList.remove("hidden");spreadArea.classList.add("hidden");spreadArea.innerHTML="";revealNote.classList.add("hidden");result.classList.add("hidden");result.innerHTML="";drawBtn.textContent="Inizia la lettura";oracleText.textContent="Fammi una domanda chiara. Al resto penso io.";if(clearQuestion)q.value=""}
 function mark(c){if(c.arcana==="Maggiore")return"✦";if(c.suit==="Bastoni")return"│";if(c.suit==="Coppe")return"◡";if(c.suit==="Spade")return"†";return"◇"}
 function renderSpread(){deckStage.classList.add("hidden");spreadArea.className="spread-area "+currentSpread;spreadArea.innerHTML="";revealNote.classList.remove("hidden");result.classList.add("hidden");drawn.forEach((d,i)=>{const slot=document.createElement("div");slot.className="card-slot";slot.innerHTML=`<span class="position-label">${d.position.label}</span><button class="tarot-card" type="button" aria-label="Rivela ${d.position.label}"><span class="card-inner"><span class="card-back"><b>✦</b><i>☾</i><small>MORRIS</small></span><span class="card-front ${d.reversed?"reversed":""}"><em>${d.card.arcana}</em><b class="mark">${mark(d.card)}</b><strong>${d.card.name}</strong><small>${d.reversed?"Rovesciata":"Dritta"}</small></span></span></button>`;const btn=slot.querySelector("button");btn.addEventListener("click",()=>{if(revealed.has(i))return;revealed.add(i);btn.classList.add("revealed");if(revealed.size===drawn.length){oracleText.textContent="Bene. Adesso guardiamo il disegno completo.";revealNote.classList.add("hidden");setTimeout(renderResult,500)}});spreadArea.appendChild(slot)})}
@@ -281,7 +281,7 @@ function draw(){
   oracle.classList.add("morris-active");
   oracleText.textContent="Morris mescola il mazzo e sceglie le carte...";
   const pool=shuffle([...deck]);
-  const nextDraw=spreads[currentSpread].positions.map((position,i)=>({card:pool[i],reversed:reversals.checked&&rnd()<.34,position}));
+  const nextDraw=spreads[currentSpread].positions.map((position,i)=>({card:pool[i],reversed:reversals.checked&&rnd()<.5,position}));
   setTimeout(()=>{
     drawn=nextDraw;revealed=new Set();
     deckStage.classList.remove("shuffling");
@@ -569,7 +569,7 @@ function draw(){
   actorShuffleV3();
   oracleText.textContent="Morris legge la domanda e mescola il mazzo...";
   const pool=shuffle([...deck]);
-  const nextDraw=spreads[currentSpread].positions.map((position,i)=>({card:pool[i],reversed:reversals.checked&&rnd()<.34,position}));
+  const nextDraw=spreads[currentSpread].positions.map((position,i)=>({card:pool[i],reversed:reversals.checked&&rnd()<.5,position}));
   setTimeout(()=>{
     drawn=nextDraw;revealed=new Set();deckStage.classList.remove("shuffling");
     renderSpread();drawBtn.textContent="Mescola ancora";drawBtn.disabled=false;actorIdleV3();
@@ -1366,7 +1366,7 @@ function draw(){
   deckStage.classList.remove("hidden");deckStage.classList.add("shuffling");actorShuffleV3();
   oracleText.textContent="Morris legge la domanda e mescola il mazzo...";
   const pool=shuffle([...deck]);
-  const nextDraw=spreads[currentSpread].positions.map((position,i)=>({card:pool[i],reversed:reversals.checked&&rnd()<.34,position}));
+  const nextDraw=spreads[currentSpread].positions.map((position,i)=>({card:pool[i],reversed:reversals.checked&&rnd()<.5,position}));
   setTimeout(()=>{
     drawn=nextDraw;revealed=new Set();deckStage.classList.remove("shuffling");
     renderSpread();drawBtn.textContent="Mescola ancora";drawBtn.disabled=false;actorIdleV3();
