@@ -62,16 +62,16 @@ button,select{font:inherit}button{cursor:pointer}
       <p class="lead">Interroga i sospettati, manda le dichiarazioni alla macchina della verità e costruisci la tua deduzione. Tre investigatori AI giocano davvero contro di te: analizzano gli stessi indizi, cambiano sospetti e possono accusare prima di te.</p>
       <div class="featureRow">
         <div class="feature"><b>Casi procedurali</b>Colpevole, prove e bugie cambiano a ogni partita.</div>
-        <div class="feature"><b>3 rivali AI</b>Ada, Nico e Vega hanno strategie e aggressività diverse.</div>
+        <div class="feature"><b>3 rivali AI</b>Ada, Nico e Vega devono raccogliere prove prima di poter accusare.</div>
         <div class="feature"><b>Morris Detective</b>Una volta per caso può fiutare una pista ad alto valore.</div>
       </div>
     </div>
     <div class="setupCard">
       <label for="difficulty">Difficoltà</label>
       <select id="difficulty">
-        <option value="easy">Facile, 12 turni, AI prudenti</option>
-        <option value="normal" selected>Normale, 10 turni</option>
-        <option value="hard">Difficile, 8 turni, AI aggressive</option>
+        <option value="easy">Facile, 12 turni, AI accusano dal turno 6</option>
+        <option value="normal" selected>Normale, 11 turni, AI accusano dal turno 5</option>
+        <option value="hard">Difficile, 10 turni, AI accusano dal turno 4</option>
       </select>
       <label for="caseType">Scenario</label>
       <select id="caseType">
@@ -188,7 +188,13 @@ function shuffle(a){var b=a.slice();for(var i=b.length-1;i>0;i--){var j=rand(i+1
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]})}
 function beep(freq,dur,type,vol){if(!soundOn)return;try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();var o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type||"square";o.frequency.value=freq;g.gain.value=vol||.04;o.connect(g);g.connect(audioCtx.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+dur);o.stop(audioCtx.currentTime+dur)}catch(e){}}
 function machineSound(isLie){beep(110,.12,"square",.04);setTimeout(function(){beep(isLie?190:420,.22,isLie?"sawtooth":"sine",.05)},180);setTimeout(function(){beep(isLie?95:620,.28,"square",.035)},430)}
-function difficultyCfg(v){return v==="easy"?{turns:12,ai:-.08,mistake:0}:v==="hard"?{turns:8,ai:.08,mistake:.12}:{turns:10,ai:0,mistake:.05}}
+function difficultyCfg(v){
+ return v==="easy"
+  ?{turns:12,ai:-.08,mistake:0,minAiRound:6,minAiEvidence:5,aiThreshold:90}
+  :v==="hard"
+   ?{turns:10,ai:.06,mistake:.10,minAiRound:4,minAiEvidence:4,aiThreshold:80}
+   :{turns:11,ai:0,mistake:.05,minAiRound:5,minAiEvidence:4,aiThreshold:85};
+}
 function buildCase(){
  var type=$("caseType").value;if(type==="random"){var keys=Object.keys(scenarios);type=keys[rand(keys.length)]}
  var sc=scenarios[type], cfg=difficultyCfg($("difficulty").value), chosen=shuffle(names).slice(0,5), culprit=rand(5), crimePlace=sc.places[rand(sc.places.length)];
@@ -203,7 +209,7 @@ function buildCase(){
    if(!isC && cfg.mistake>0 && Math.random()<cfg.mistake){q[0].truth=false;q[0].text="«Al momento del fatto ero in "+shuffle(sc.places.filter(function(p){return p!==realPlace}))[0]+".»"}
    return {id:i,name:x.n,role:x.r,emoji:x.e,isCulprit:isC,realPlace:realPlace,touched:touched,motive:motive,questions:q,tested:{},playerSusp:0};
  });
- return {type:type,sc:sc,cfg:cfg,suspects:suspects,culprit:culprit,round:1,maxTurns:cfg.turns,over:false,sniff:false,playerOut:false,ai:aiTemplates.map(function(a){return{id:a.id,name:a.name,tag:a.tag,face:a.face,risk:a.risk+cfg.ai,skill:a.skill,alive:true,susp:[0,0,0,0,0],known:{},last:"In attesa del primo indizio."}}),notes:[]};
+ return {type:type,sc:sc,cfg:cfg,suspects:suspects,culprit:culprit,round:1,maxTurns:cfg.turns,over:false,sniff:false,playerOut:false,ai:aiTemplates.map(function(a){return{id:a.id,name:a.name,tag:a.tag,face:a.face,risk:a.risk+cfg.ai,skill:a.skill,alive:true,susp:[0,0,0,0,0],known:{},evidence:0,last:"In attesa del primo indizio."}}),notes:[]};
 }
 function log(msg){var d=document.createElement("div");d.innerHTML=msg;$("log").prepend(d)}
 function renderCase(){
@@ -230,7 +236,7 @@ function renderNotes(){
 function renderAI(){
  $("aiAgents").innerHTML=game.ai.map(function(a){
    var max=Math.max.apply(null,a.susp),idx=a.susp.indexOf(max),lead=game.suspects[idx];
-   return '<div class="aiAgent"><div class="aiFace">'+a.face+'</div><div class="aiText"><b>'+a.name+'</b> · '+a.tag+'<br>'+(a.alive?'Sospetta '+esc(lead.name)+' ('+Math.round(max)+'%)':'Fuori dal caso')+'<br><span class="'+(a.alive?'':'thinking')+'">'+esc(a.last)+'</span></div></div>';
+   return '<div class="aiAgent"><div class="aiFace">'+a.face+'</div><div class="aiText"><b>'+a.name+'</b> · '+a.tag+'<br>'+(a.alive?'Sospetta '+esc(lead.name)+' ('+Math.round(max)+'%) · indizi '+a.evidence+'/'+game.cfg.minAiEvidence:'Fuori dal caso')+'<br><span class="'+(a.alive?'':'thinking')+'">'+esc(a.last)+'</span></div></div>';
  }).join("");
 }
 function updateMorris(custom){
@@ -265,12 +271,20 @@ function aiChoose(a){
  if(!choices.length)return null;choices.sort(function(x,y){return y.score-x.score});return choices[0];
 }
 function aiLearn(a,si,q){
- var noisy=Math.random()>a.skill, perceived=noisy?!q.truth:q.truth, delta=perceived?-(q.weight*7):(q.weight*16);
+ var noisy=Math.random()>a.skill, perceived=noisy?!q.truth:q.truth, delta=perceived?-(q.weight*6):(q.weight*13);
  a.susp[si]=Math.max(0,Math.min(100,a.susp[si]+delta));
  for(var i=0;i<a.susp.length;i++){if(i!==si)a.susp[i]=Math.max(0,a.susp[i]+(perceived?1:0))}
+ a.evidence++;
 }
 function aiMayAccuse(a){
- var max=Math.max.apply(null,a.susp),idx=a.susp.indexOf(max),threshold=82-(a.risk*18)+(game.round<3?8:0);
+ if(!a.alive||game.over)return;
+ var max=Math.max.apply(null,a.susp),idx=a.susp.indexOf(max);
+ var threshold=game.cfg.aiThreshold-(a.risk*.8);
+ var unlocked=game.round>=game.cfg.minAiRound && a.evidence>=game.cfg.minAiEvidence;
+ if(!unlocked){
+   a.last="Sta costruendo il caso ("+a.evidence+"/"+game.cfg.minAiEvidence+" indizi).";
+   return;
+ }
  if(max>=threshold||game.round>=game.maxTurns){
    a.last="Formula un'accusa: "+game.suspects[idx].name+".";
    log('<b>'+a.name+'</b> accusa '+esc(game.suspects[idx].name)+'.');
