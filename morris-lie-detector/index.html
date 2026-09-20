@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#321f18">
+<title>Morris Lie Detector</title>
+<style>
+:root{--ink:#241b16;--paper:#efe2c6;--paper2:#d9c8a5;--red:#a53127;--green:#55775a;--amber:#d39a3d;--cream:#fff8e7;--line:#6a5542;--dark:#1a1613}
+*{box-sizing:border-box}html,body{margin:0;background:#17130f;color:var(--ink);font-family:Georgia,"Times New Roman",serif}body{min-height:100vh;background-image:radial-gradient(circle at 20% 10%,#3a2a1d55,transparent 30%),linear-gradient(#17130f,#211912)}
+button,select{font:inherit}button{cursor:pointer}
+.app{max-width:1180px;margin:auto;padding:12px}
+.topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;background:#2a211b;color:#fff4d7;border:2px solid #765b40;padding:10px 12px;box-shadow:0 8px 30px #0008}
+.brand{display:flex;align-items:center;gap:10px}.brand strong{font-size:clamp(18px,4vw,30px);letter-spacing:.06em;text-transform:uppercase}.brand small{display:block;color:#d9c6a5;font-family:Arial,sans-serif;letter-spacing:.08em}
+.morrisBadge{width:62px;height:62px;flex:0 0 auto}
+.topActions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.vbtn{border:2px solid #b28d5e;background:#e6d1a9;color:#271b12;padding:9px 12px;border-radius:5px;font-weight:700;box-shadow:inset 0 0 0 2px #fff6d555,0 2px 0 #111}
+.vbtn:hover{filter:brightness(1.05)}.vbtn.red{background:#a33a2f;color:white;border-color:#5d1e17}.vbtn.green{background:#637a58;color:white;border-color:#34452e}.vbtn:disabled{opacity:.5;cursor:not-allowed}
+.panel{background:linear-gradient(145deg,#f0e3c8,#ddc8a3);border:3px solid #6d5138;border-radius:8px;box-shadow:0 10px 30px #0007,inset 0 0 0 3px #fff3d344}
+.setup{margin-top:12px;padding:24px;display:grid;grid-template-columns:1.25fr .75fr;gap:24px}.setup h1{margin:.1em 0;font-size:clamp(30px,6vw,58px);line-height:.95;text-transform:uppercase}.setup .lead{font:18px/1.55 Arial,sans-serif;max-width:720px}.setupCard{background:#2c241d;color:#f9ecd1;padding:18px;border:2px solid #826547;border-radius:8px}.setupCard label{display:block;font:700 13px Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;margin:10px 0 6px}.setupCard select{width:100%;padding:12px;background:#fff8e7;border:2px solid #8b6d4d;border-radius:4px;font-size:16px}.setupCard .vbtn{width:100%;margin-top:14px;padding:14px}
+.featureRow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}.feature{border-top:2px solid #866b4f;padding-top:8px;font:14px/1.35 Arial,sans-serif}.feature b{display:block;font-family:Georgia,serif;font-size:17px}
+.game{display:none;margin-top:12px;gap:12px}.game.active{display:grid;grid-template-columns:1fr 340px}.caseHead{padding:14px 16px;display:flex;gap:15px;align-items:flex-start;justify-content:space-between}.caseHead h2{margin:0;font-size:clamp(24px,4vw,38px)}.caseMeta{font:14px/1.4 Arial,sans-serif;color:#5c4938}.round{background:#2b211a;color:#ffedc5;padding:9px 12px;border-radius:4px;text-align:center;min-width:120px;font:bold 14px Arial,sans-serif}
+.suspects{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding:0 12px 12px}.suspect{border:2px solid #76573e;background:#f8edcf;padding:10px;border-radius:6px;min-width:0;position:relative}.suspect.active{outline:4px solid #c49844}.suspect.out{opacity:.48;filter:grayscale(.6)}.portrait{height:90px;border:2px solid #5e4938;border-radius:4px;background:linear-gradient(160deg,#b6a78c,#716450);display:flex;align-items:center;justify-content:center;font-size:42px;margin-bottom:8px}.suspect h3{margin:0 0 4px;font-size:16px}.suspect .role{font:11px Arial,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#6c5946;min-height:28px}.meter{height:7px;background:#cfbea0;border:1px solid #72583d;margin-top:8px}.meter i{display:block;height:100%;background:#9d342b;width:0}.suspect button{width:100%;margin-top:8px;padding:8px 6px;font-size:13px}
+.machineWrap{padding:12px}.machine{background:linear-gradient(#5a4737,#33271f);border:4px solid #b08b5f;border-radius:12px;color:#fff0cf;padding:14px;box-shadow:inset 0 0 30px #000b,0 8px 18px #0007}.machineTop{display:flex;justify-content:space-between;gap:10px;align-items:center;font:bold 13px Arial,sans-serif;letter-spacing:.12em;text-transform:uppercase}.bulb{width:18px;height:18px;border-radius:50%;background:#4f3b2d;border:2px solid #b8915d}.bulb.on{background:#e7b348;box-shadow:0 0 16px #ffd064}
+.gauge{height:150px;margin:12px 0 10px;background:#efe1be;border:4px solid #231b16;border-radius:85px 85px 8px 8px;position:relative;overflow:hidden}.gauge:before{content:"VERITÀ";position:absolute;left:16px;bottom:18px;color:#496147;font:bold 12px Arial,sans-serif}.gauge:after{content:"MENZOGNA";position:absolute;right:12px;bottom:18px;color:#9a2e28;font:bold 12px Arial,sans-serif}.arc{position:absolute;width:80%;height:80%;left:10%;top:22%;border:3px solid #6b5840;border-bottom:0;border-radius:100% 100% 0 0}.needle{position:absolute;width:4px;height:95px;background:#261b14;left:50%;bottom:16px;transform-origin:50% 100%;transform:rotate(0deg);transition:transform .9s cubic-bezier(.2,.8,.2,1)}.hub{position:absolute;width:22px;height:22px;background:#2b211a;border-radius:50%;left:calc(50% - 9px);bottom:8px;border:3px solid #7d6346}.machineText{min-height:54px;background:#1b1713;border:2px inset #806143;color:#f7ddb1;padding:10px;font:14px/1.35 "Courier New",monospace}
+.questionBox{padding:12px}.questionBox h3{margin:0 0 8px}.questionList{display:grid;gap:7px}.qbtn{text-align:left;border:2px solid #826345;background:#fff4d7;padding:10px;border-radius:5px}.qbtn.done{text-decoration:line-through;opacity:.55}.qbtn strong{display:block}.qbtn span{font:12px Arial,sans-serif;color:#604d3e}.qbtn:disabled{cursor:not-allowed}
+.clues{padding:12px}.clues h3{margin:0 0 8px}.clueList{display:grid;gap:7px}.clue{background:#fff5da;border-left:5px solid #8e6846;padding:8px 10px;font:13px/1.4 Arial,sans-serif}.clue.lie{border-color:#a6332b}.clue.truth{border-color:#526f53}.empty{font:13px Arial,sans-serif;color:#685648;font-style:italic}
+.side{display:grid;gap:12px;align-content:start}.aiPanel,.morrisPanel,.scorePanel{padding:12px}.aiPanel h3,.morrisPanel h3,.scorePanel h3{margin:0 0 8px}.aiAgent{display:grid;grid-template-columns:42px 1fr;gap:8px;align-items:center;padding:8px 0;border-top:1px solid #917554}.aiAgent:first-of-type{border-top:0}.aiFace{width:40px;height:40px;border-radius:50%;background:#42342a;color:#f8e8c9;display:grid;place-items:center;font:bold 15px Arial,sans-serif}.aiText{font:12px/1.35 Arial,sans-serif}.aiText b{font-family:Georgia,serif;font-size:15px}.thinking{color:#8a2f29;font-weight:700}
+.morrisRow{display:flex;gap:10px;align-items:center}.morrisBig{width:110px;height:110px;flex:0 0 auto}.morrisSpeech{background:#fff5d7;border:2px solid #8d6c49;border-radius:8px;padding:10px;font:14px/1.35 Arial,sans-serif;position:relative}.morrisSpeech:before{content:"";position:absolute;left:-12px;top:32px;border-width:8px 12px 8px 0;border-style:solid;border-color:transparent #8d6c49 transparent transparent}
+.log{max-height:220px;overflow:auto;background:#211a15;color:#f1dfbc;border:2px inset #70563e;padding:9px;font:12px/1.45 "Courier New",monospace}.log div{border-bottom:1px dotted #65503c;padding:4px 0}.log b{color:#f4b75b}
+.modal{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;padding:16px;z-index:50}.modal.open{display:flex}.modalCard{max-width:620px;width:100%;background:#efe2c6;border:4px solid #806042;padding:20px;box-shadow:0 20px 60px #000}.modalCard h2{margin-top:0;font-size:30px}.accuseGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.accuseGrid button{padding:12px}.resultBadge{font:bold 18px Arial,sans-serif;padding:10px;border:2px solid #785e43;background:#fff3d4;margin:10px 0}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#fff1cf;padding:10px;border:1px solid #8a6a49;text-align:center}.stat b{display:block;font-size:24px}
+.footerNote{color:#bda98a;font:12px/1.45 Arial,sans-serif;text-align:center;padding:14px}
+@media(max-width:900px){.game.active{grid-template-columns:1fr}.side{grid-template-columns:1fr 1fr}.scorePanel{grid-column:1/-1}.setup{grid-template-columns:1fr}.suspects{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.app{padding:7px}.topbar{align-items:flex-start}.brand small{display:none}.morrisBadge{width:48px;height:48px}.setup{padding:15px}.featureRow{grid-template-columns:1fr}.suspects{grid-template-columns:1fr 1fr}.portrait{height:72px}.side{grid-template-columns:1fr}.scorePanel{grid-column:auto}.caseHead{flex-direction:column}.round{width:100%}.accuseGrid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.machine{padding:10px}.gauge{height:135px}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="brand">
+      <svg class="morrisBadge" viewBox="0 0 120 120" role="img" aria-label="Morris, Maltipoo detective">
+        <circle cx="60" cy="60" r="56" fill="#e9ddc4" stroke="#8a6847" stroke-width="5"/>
+        <ellipse cx="38" cy="49" rx="21" ry="30" fill="#d7ba83"/><ellipse cx="82" cy="49" rx="21" ry="30" fill="#d7ba83"/>
+        <circle cx="60" cy="58" r="35" fill="#fffaf0"/><circle cx="47" cy="55" r="5" fill="#1d1713"/><circle cx="73" cy="55" r="5" fill="#1d1713"/>
+        <ellipse cx="60" cy="68" rx="8" ry="6" fill="#191411"/><path d="M53 77 Q60 84 67 77" fill="none" stroke="#3f2d22" stroke-width="3" stroke-linecap="round"/>
+        <path d="M31 28 Q60 4 89 28" fill="#503a29"/><path d="M24 31 H96" stroke="#503a29" stroke-width="8"/>
+        <circle cx="83" cy="83" r="17" fill="none" stroke="#30251e" stroke-width="5"/><path d="M94 95 L108 109" stroke="#30251e" stroke-width="7" stroke-linecap="round"/>
+      </svg>
+      <div><strong>Morris Lie Detector</strong><small>ARCHIVIO INVESTIGATIVO 1977</small></div>
+    </div>
+    <div class="topActions">
+      <button class="vbtn" id="soundBtn" type="button">🔊 Suono ON</button>
+      <button class="vbtn" id="statsBtn" type="button">Archivio</button>
+      <button class="vbtn red" id="newBtn" type="button">Nuovo caso</button>
+    </div>
+  </header>
+
+  <section class="panel setup" id="setup">
+    <div>
+      <div style="font:bold 13px Arial,sans-serif;letter-spacing:.18em;color:#8a3028">UN GIALLO DA TAVOLO DIVENTA DIGITALE</div>
+      <h1>Scopri chi mente<br>prima delle AI.</h1>
+      <p class="lead">Interroga i sospettati, manda le dichiarazioni alla macchina della verità e costruisci la tua deduzione. Tre investigatori AI giocano davvero contro di te: analizzano gli stessi indizi, cambiano sospetti e possono accusare prima di te.</p>
+      <div class="featureRow">
+        <div class="feature"><b>Casi procedurali</b>Colpevole, prove e bugie cambiano a ogni partita.</div>
+        <div class="feature"><b>3 rivali AI</b>Ada, Nico e Vega hanno strategie e aggressività diverse.</div>
+        <div class="feature"><b>Morris Detective</b>Una volta per caso può fiutare una pista ad alto valore.</div>
+      </div>
+    </div>
+    <div class="setupCard">
+      <label for="difficulty">Difficoltà</label>
+      <select id="difficulty">
+        <option value="easy">Facile, 12 turni, AI prudenti</option>
+        <option value="normal" selected>Normale, 10 turni</option>
+        <option value="hard">Difficile, 8 turni, AI aggressive</option>
+      </select>
+      <label for="caseType">Scenario</label>
+      <select id="caseType">
+        <option value="random" selected>Casuale</option>
+        <option value="villa">Villa Ardesia</option>
+        <option value="teatro">Teatro Aurora</option>
+        <option value="museo">Museo Notturno</option>
+        <option value="hotel">Hotel Miraggio</option>
+        <option value="studio">Studio 9</option>
+      </select>
+      <button class="vbtn green" id="startBtn" type="button">APRI IL FASCICOLO</button>
+      <p style="font:12px/1.45 Arial,sans-serif;color:#d7c2a0;margin:12px 0 0">Nessun account e nessuna API: le AI ragionano nel browser. Le statistiche restano solo sul tuo dispositivo.</p>
+    </div>
+  </section>
+
+  <main class="game" id="game">
+    <div>
+      <section class="panel caseHead">
+        <div><div class="caseMeta" id="caseKicker"></div><h2 id="caseTitle"></h2><div class="caseMeta" id="caseDesc"></div></div>
+        <div class="round" id="roundBox">TURNO 1 / 10</div>
+      </section>
+
+      <section class="panel suspects" id="suspects"></section>
+
+      <section class="machineWrap">
+        <div class="machine">
+          <div class="machineTop"><span>Unità elettromeccanica MLD-77</span><span class="bulb" id="bulb"></span></div>
+          <div class="gauge" aria-label="Indicatore verità o menzogna"><div class="arc"></div><div class="needle" id="needle"></div><div class="hub"></div></div>
+          <div class="machineText" id="machineText" aria-live="polite">Seleziona un sospettato e sottoponi una dichiarazione al Lie Detector.</div>
+        </div>
+      </section>
+
+      <section class="panel questionBox">
+        <h3 id="questionTitle">Dichiarazioni da verificare</h3>
+        <div class="questionList" id="questions"><div class="empty">Seleziona prima un sospettato.</div></div>
+      </section>
+
+      <section class="panel clues">
+        <h3>Il tuo taccuino</h3>
+        <div class="clueList" id="clueList"><div class="empty">Ancora nessun test eseguito.</div></div>
+      </section>
+    </div>
+
+    <aside class="side">
+      <section class="panel morrisPanel">
+        <h3>Morris, investigatore a quattro zampe</h3>
+        <div class="morrisRow">
+          <svg class="morrisBig" viewBox="0 0 150 150" role="img" aria-label="Morris">
+            <ellipse cx="37" cy="62" rx="27" ry="39" fill="#d8bd89"/><ellipse cx="113" cy="62" rx="27" ry="39" fill="#d8bd89"/>
+            <circle cx="75" cy="73" r="49" fill="#fffaf0" stroke="#8e765b" stroke-width="3"/>
+            <circle cx="57" cy="66" r="7" fill="#181412"/><circle cx="93" cy="66" r="7" fill="#181412"/>
+            <ellipse cx="75" cy="83" rx="11" ry="8" fill="#191411"/><path d="M64 96 Q75 108 86 96" fill="none" stroke="#4a3326" stroke-width="4" stroke-linecap="round"/>
+            <path d="M33 36 Q75 3 117 36" fill="#4c3829"/><path d="M25 40 H125" stroke="#4c3829" stroke-width="10"/>
+            <path d="M48 119 Q75 132 102 119" fill="#6d2330"/><circle cx="75" cy="124" r="7" fill="#c29b44"/>
+          </svg>
+          <div class="morrisSpeech" id="morrisSpeech">«Apriamo il fascicolo, Mauri. Io tengo il naso sulle bugie.»</div>
+        </div>
+        <button class="vbtn green" id="sniffBtn" type="button" style="width:100%;margin-top:10px">🐾 MORRIS, FIUTA UNA PISTA</button>
+      </section>
+
+      <section class="panel aiPanel">
+        <h3>Investigatori AI</h3>
+        <div id="aiAgents"></div>
+      </section>
+
+      <section class="panel scorePanel">
+        <h3>Registro operazioni</h3>
+        <div class="log" id="log"></div>
+        <button class="vbtn red" id="accuseBtn" type="button" style="width:100%;margin-top:10px">⚠ ACCUSA UN SOSPETTATO</button>
+      </section>
+    </aside>
+  </main>
+
+  <div class="footerNote">Gioco originale ispirato ai detective game elettromeccanici vintage. Morris Lie Detector non è affiliato a Mattel o ad altri marchi storici.</div>
+</div>
+
+<div class="modal" id="accuseModal" role="dialog" aria-modal="true" aria-labelledby="accuseTitle">
+  <div class="modalCard"><h2 id="accuseTitle">Chi accusi?</h2><p>Hai una sola accusa. Se sbagli, sei fuori dal caso.</p><div class="accuseGrid" id="accuseGrid"></div><button class="vbtn" id="closeAccuse" type="button" style="margin-top:12px">Annulla</button></div>
+</div>
+
+<div class="modal" id="resultModal" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+  <div class="modalCard"><h2 id="resultTitle"></h2><div id="resultBody"></div><button class="vbtn green" id="playAgain" type="button" style="width:100%;margin-top:12px">GIOCA UN ALTRO CASO</button></div>
+</div>
+
+<div class="modal" id="statsModal" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
+  <div class="modalCard"><h2 id="statsTitle">Archivio personale</h2><div class="stats" id="statsGrid"></div><button class="vbtn" id="closeStats" type="button" style="margin-top:12px;width:100%">Chiudi archivio</button></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id)};
+var soundOn=true, audioCtx=null, game=null, selectedId=null, busy=false;
+var names=[
+ {n:"Bianca Serra",r:"restauratrice",e:"👩🏻‍🎨"},{n:"Carlo Verri",r:"antiquario",e:"🧔🏻"},{n:"Daria Neri",r:"fotografa",e:"👩🏻‍🦰"},
+ {n:"Enrico Sala",r:"avvocato",e:"👨🏻‍💼"},{n:"Flavia Monti",r:"giornalista",e:"👩🏼‍💼"},{n:"Giorgio Riva",r:"medico",e:"👨🏻‍⚕️"},
+ {n:"Irene Bassi",r:"musicista",e:"👩🏻‍🎤"},{n:"Lorenzo Costa",r:"architetto",e:"🧑🏻‍💼"},{n:"Marta Villa",r:"gallerista",e:"👩🏼"},
+ {n:"Nando Ferri",r:"tecnico luci",e:"👨🏻‍🔧"},{n:"Olivia Conti",r:"collezionista",e:"👩🏻"},{n:"Paolo Bruni",r:"chef",e:"👨🏻‍🍳"}
+];
+var scenarios={
+ villa:{title:"Il diamante di Villa Ardesia",kicker:"FASCICOLO A-17 · FURTO",desc:"Durante un ricevimento sparisce il Diamante Ardesia dalla cassaforte dello studio. Le porte erano chiuse dall'interno.",places:["biblioteca","serra","studio","salone","terrazza"],object:"chiave della cassaforte",victim:"il padrone di casa"},
+ teatro:{title:"L'ultima prova al Teatro Aurora",kicker:"FASCICOLO T-04 · SABOTAGGIO",desc:"Pochi minuti prima della prima, il sistema delle quinte viene manomesso. Solo cinque persone erano rimaste nell'edificio.",places:["camerino","palco","foyer","cabina luci","magazzino"],object:"leva di sicurezza",victim:"il regista"},
+ museo:{title:"Ombre al Museo Notturno",kicker:"FASCICOLO M-31 · SCOMPARSA",desc:"Una statuetta etrusca scompare durante l'apertura serale. Le telecamere registrano un buco di sette minuti.",places:["sala romana","archivio","guardaroba","sala etrusca","cortile"],object:"badge di servizio",victim:"la direttrice"},
+ hotel:{title:"La camera 214 dell'Hotel Miraggio",kicker:"FASCICOLO H-22 · RICATTO",desc:"Una busta con documenti compromettenti sparisce dalla camera 214. Nessun segno di effrazione.",places:["reception","bar","camera 214","cucina","terrazza"],object:"passe-partout",victim:"l'ospite della 214"},
+ studio:{title:"Il nastro scomparso dallo Studio 9",kicker:"FASCICOLO S-09 · FURTO",desc:"Il master originale di una registrazione sparisce dallo studio durante una pausa di dodici minuti.",places:["regia","sala ripresa","corridoio","magazzino","lounge"],object:"custodia del master",victim:"il produttore"}
+};
+var aiTemplates=[
+ {id:"ada",name:"ADA",tag:"Analitica",face:"A",risk:.78,skill:.92,color:"#45658b"},
+ {id:"nico",name:"NICO",tag:"Istintivo",face:"N",risk:.66,skill:.75,color:"#7b4e35"},
+ {id:"vega",name:"VEGA",tag:"Pattern hunter",face:"V",risk:.72,skill:.84,color:"#576947"}
+];
+function rand(n){return Math.floor(Math.random()*n)}
+function shuffle(a){var b=a.slice();for(var i=b.length-1;i>0;i--){var j=rand(i+1),t=b[i];b[i]=b[j];b[j]=t}return b}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]})}
+function beep(freq,dur,type,vol){if(!soundOn)return;try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();var o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type||"square";o.frequency.value=freq;g.gain.value=vol||.04;o.connect(g);g.connect(audioCtx.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+dur);o.stop(audioCtx.currentTime+dur)}catch(e){}}
+function machineSound(isLie){beep(110,.12,"square",.04);setTimeout(function(){beep(isLie?190:420,.22,isLie?"sawtooth":"sine",.05)},180);setTimeout(function(){beep(isLie?95:620,.28,"square",.035)},430)}
+function difficultyCfg(v){return v==="easy"?{turns:12,ai:-.08,mistake:0}:v==="hard"?{turns:8,ai:.08,mistake:.12}:{turns:10,ai:0,mistake:.05}}
+function buildCase(){
+ var type=$("caseType").value;if(type==="random"){var keys=Object.keys(scenarios);type=keys[rand(keys.length)]}
+ var sc=scenarios[type], cfg=difficultyCfg($("difficulty").value), chosen=shuffle(names).slice(0,5), culprit=rand(5), crimePlace=sc.places[rand(sc.places.length)];
+ var honestPlaces=shuffle(sc.places.filter(function(p){return p!==crimePlace}));
+ var suspects=chosen.map(function(x,i){
+   var isC=i===culprit, realPlace=isC?crimePlace:honestPlaces[i%honestPlaces.length], touched=isC || Math.random()<.22, motive=isC?2:(Math.random()<.45?1:0);
+   var q=[
+    {key:"place",text:"«Al momento del fatto ero in "+realPlace+".»",detail:"Verifica l'alibi dichiarato.",truth:!isC,weight:3},
+    {key:"object",text:"«Non ho mai toccato "+sc.object+".»",detail:"Controlla il contatto con l'oggetto chiave.",truth:!touched,weight:2},
+    {key:"motive",text:"«Non avevo alcun motivo per danneggiare "+sc.victim+".»",detail:"Confronta movente e rapporti personali.",truth:motive===0,weight:1}
+   ];
+   if(!isC && cfg.mistake>0 && Math.random()<cfg.mistake){q[0].truth=false;q[0].text="«Al momento del fatto ero in "+shuffle(sc.places.filter(function(p){return p!==realPlace}))[0]+".»"}
+   return {id:i,name:x.n,role:x.r,emoji:x.e,isCulprit:isC,realPlace:realPlace,touched:touched,motive:motive,questions:q,tested:{},playerSusp:0};
+ });
+ return {type:type,sc:sc,cfg:cfg,suspects:suspects,culprit:culprit,round:1,maxTurns:cfg.turns,over:false,sniff:false,playerOut:false,ai:aiTemplates.map(function(a){return{id:a.id,name:a.name,tag:a.tag,face:a.face,risk:a.risk+cfg.ai,skill:a.skill,alive:true,susp:[0,0,0,0,0],known:{},last:"In attesa del primo indizio."}}),notes:[]};
+}
+function log(msg){var d=document.createElement("div");d.innerHTML=msg;$("log").prepend(d)}
+function renderCase(){
+ var sc=game.sc;$("caseKicker").textContent=sc.kicker;$("caseTitle").textContent=sc.title;$("caseDesc").textContent=sc.desc;$("roundBox").textContent="TURNO "+game.round+" / "+game.maxTurns;
+ renderSuspects();renderAI();renderQuestions();renderNotes();updateMorris();
+}
+function renderSuspects(){
+ $("suspects").innerHTML=game.suspects.map(function(s){
+  var pct=Math.max(0,Math.min(100,s.playerSusp));
+  return '<article class="suspect '+(selectedId===s.id?'active ':'')+'"><div class="portrait">'+s.emoji+'</div><h3>'+esc(s.name)+'</h3><div class="role">'+esc(s.role)+'</div><div class="meter" title="Tuo sospetto"><i style="width:'+pct+'%"></i></div><button class="vbtn" type="button" data-select="'+s.id+'">Interroga</button></article>';
+ }).join("");
+ Array.prototype.forEach.call(document.querySelectorAll("[data-select]"),function(b){b.addEventListener("click",function(){if(busy||game.over)return;selectedId=Number(this.getAttribute("data-select"));renderSuspects();renderQuestions()})});
+}
+function renderQuestions(){
+ var box=$("questions");if(selectedId===null){box.innerHTML='<div class="empty">Seleziona prima un sospettato.</div>';return}
+ var s=game.suspects[selectedId];$("questionTitle").textContent="Dichiarazioni di "+s.name;
+ box.innerHTML=s.questions.map(function(q,idx){var done=!!s.tested[q.key];return '<button class="qbtn '+(done?'done':'')+'" type="button" data-q="'+idx+'" '+(done||busy?'disabled':'')+'><strong>'+esc(q.text)+'</strong><span>'+esc(q.detail)+'</span></button>'}).join("");
+ Array.prototype.forEach.call(document.querySelectorAll("[data-q]"),function(b){b.addEventListener("click",function(){testPlayerQuestion(Number(this.getAttribute("data-q")))})});
+}
+function renderNotes(){
+ var list=$("clueList");if(!game.notes.length){list.innerHTML='<div class="empty">Ancora nessun test eseguito.</div>';return}
+ list.innerHTML=game.notes.map(function(n){return '<div class="clue '+(n.truth?'truth':'lie')+'"><b>'+esc(n.name)+': '+(n.truth?'VERITÀ':'MENZOGNA')+'</b><br>'+esc(n.text)+'</div>'}).join("");
+}
+function renderAI(){
+ $("aiAgents").innerHTML=game.ai.map(function(a){
+   var max=Math.max.apply(null,a.susp),idx=a.susp.indexOf(max),lead=game.suspects[idx];
+   return '<div class="aiAgent"><div class="aiFace">'+a.face+'</div><div class="aiText"><b>'+a.name+'</b> · '+a.tag+'<br>'+(a.alive?'Sospetta '+esc(lead.name)+' ('+Math.round(max)+'%)':'Fuori dal caso')+'<br><span class="'+(a.alive?'':'thinking')+'">'+esc(a.last)+'</span></div></div>';
+ }).join("");
+}
+function updateMorris(custom){
+ if(custom){$("morrisSpeech").textContent="«"+custom+"»";return}
+ if(!game){return}
+ if(game.notes.length===0){$("morrisSpeech").textContent="«Partiamo dagli alibi. Una bugia sul luogo pesa più di tutto il resto.»"}
+ else{
+  var lies=game.notes.filter(function(n){return !n.truth});
+  if(lies.length){$("morrisSpeech").textContent="«Io terrei d'occhio "+lies[0].name+". Una bugia non condanna nessuno, ma puzza parecchio.»"}
+  else{$("morrisSpeech").textContent="«Finora solo verità. Non innamorarti della prima teoria, continua a testare.»"}
+ }
+ $("sniffBtn").disabled=game.sniff||game.over;$("sniffBtn").textContent=game.sniff?"🐾 PISTA GIÀ FIUTATA":"🐾 MORRIS, FIUTA UNA PISTA";
+}
+function updateSuspicion(s,q){
+ var delta=q.truth?-(q.weight*10):(q.weight*18);s.playerSusp=Math.max(0,Math.min(100,s.playerSusp+delta));
+}
+function testPlayerQuestion(idx){
+ if(!game||game.over||busy||selectedId===null)return;
+ var s=game.suspects[selectedId],q=s.questions[idx];if(s.tested[q.key])return;
+ busy=true;s.tested[q.key]=true;$("bulb").classList.add("on");$("machineText").textContent="Analisi in corso... impulso galvanico... confronto della dichiarazione...";beep(140,.08);
+ var outcome=q.truth;
+ setTimeout(function(){
+  $("needle").style.transform="rotate("+(outcome?-50:50)+"deg)";machineSound(!outcome);
+  $("machineText").textContent=outcome?"VERITÀ. La dichiarazione risulta coerente.":"MENZOGNA. La dichiarazione non è coerente con i fatti.";
+  $("bulb").classList.remove("on");game.notes.unshift({name:s.name,text:q.text,truth:outcome});updateSuspicion(s,q);
+  log('<b>TU</b> testi '+esc(s.name)+': '+(outcome?'VERITÀ':'MENZOGNA')+'.');renderNotes();renderSuspects();renderQuestions();updateMorris();
+  setTimeout(function(){aiPhase()},650);
+ },900);
+}
+function aiChoose(a){
+ var choices=[];game.suspects.forEach(function(s,si){s.questions.forEach(function(q,qi){var key=si+"-"+q.key;if(!a.known[key])choices.push({si:si,qi:qi,q:q,s:s,key:key,score:a.susp[si]+q.weight*8+Math.random()*18})})});
+ if(!choices.length)return null;choices.sort(function(x,y){return y.score-x.score});return choices[0];
+}
+function aiLearn(a,si,q){
+ var noisy=Math.random()>a.skill, perceived=noisy?!q.truth:q.truth, delta=perceived?-(q.weight*7):(q.weight*16);
+ a.susp[si]=Math.max(0,Math.min(100,a.susp[si]+delta));
+ for(var i=0;i<a.susp.length;i++){if(i!==si)a.susp[i]=Math.max(0,a.susp[i]+(perceived?1:0))}
+}
+function aiMayAccuse(a){
+ var max=Math.max.apply(null,a.susp),idx=a.susp.indexOf(max),threshold=82-(a.risk*18)+(game.round<3?8:0);
+ if(max>=threshold||game.round>=game.maxTurns){
+   a.last="Formula un'accusa: "+game.suspects[idx].name+".";
+   log('<b>'+a.name+'</b> accusa '+esc(game.suspects[idx].name)+'.');
+   if(idx===game.culprit){finish(false,a.name+" ha risolto il caso prima di te.",a.name)}
+   else{a.alive=false;a.last="Accusa errata. È fuori dal caso.";log('<b>'+a.name+'</b> ha sbagliato ed è fuori.')}
+ }
+}
+function aiPhase(){
+ if(game.over)return;
+ var living=game.ai.filter(function(a){return a.alive}),delay=0;
+ living.forEach(function(a){
+  setTimeout(function(){
+   if(game.over)return;var c=aiChoose(a);if(!c){aiMayAccuse(a);renderAI();return}
+   a.known[c.key]=true;aiLearn(a,c.si,c.q);a.last="Ha verificato una pista su "+c.s.name+".";
+   log('<b>'+a.name+'</b> analizza '+esc(c.s.name)+'.');aiMayAccuse(a);renderAI();
+  },delay+=270);
+ });
+ setTimeout(function(){
+  if(game.over)return;game.round++;
+  if(game.round>game.maxTurns){var active=game.ai.filter(function(a){return a.alive});active.forEach(aiMayAccuse);if(!game.over)finish(false,"Tempo esaurito. Nessuno ha chiuso il caso in tempo.","ARCHIVIO");return}
+  busy=false;$("needle").style.transform="rotate(0deg)";$("machineText").textContent="Macchina pronta. Seleziona la prossima dichiarazione.";$("roundBox").textContent="TURNO "+game.round+" / "+game.maxTurns;renderQuestions();renderAI();updateMorris();
+ },delay+430);
+}
+function sniff(){
+ if(!game||game.sniff||game.over||busy)return;game.sniff=true;
+ var best=null;game.suspects.forEach(function(s){s.questions.forEach(function(q){if(!s.tested[q.key]&&(!best||q.weight>best.q.weight||(q.weight===best.q.weight&&Math.random()>.5)))best={s:s,q:q}})});
+ if(!best){updateMorris("Ho annusato tutto il fascicolo. Non resta una pista nuova da regalarti.");return}
+ best.s.tested[best.q.key]=true;game.notes.unshift({name:best.s.name,text:best.q.text,truth:best.q.truth});updateSuspicion(best.s,best.q);
+ updateMorris("Questa mi interessa: "+best.s.name+" suona "+(best.q.truth?"pulito":"storto")+". Te la segno io.");
+ log('<b>MORRIS</b> fiuta una pista su '+esc(best.s.name)+': '+(best.q.truth?'VERITÀ':'MENZOGNA')+'.');beep(520,.15,"sine",.04);renderNotes();renderSuspects();renderQuestions();
+}
+function openAccuse(){
+ if(!game||game.over||busy||game.playerOut)return;$("accuseGrid").innerHTML=game.suspects.map(function(s){return '<button class="vbtn red" type="button" data-accuse="'+s.id+'">'+esc(s.name)+'</button>'}).join("");
+ Array.prototype.forEach.call(document.querySelectorAll("[data-accuse]"),function(b){b.addEventListener("click",function(){playerAccuse(Number(this.getAttribute("data-accuse")))})});$("accuseModal").classList.add("open")
+}
+function playerAccuse(id){
+ $("accuseModal").classList.remove("open");if(game.over)return;
+ var s=game.suspects[id];log('<b>TU</b> accusi '+esc(s.name)+'.');
+ if(id===game.culprit){finish(true,"Hai individuato il colpevole prima delle AI.","MAURI")}
+ else{game.playerOut=true;finish(false,"Accusa errata. Il vero colpevole era "+game.suspects[game.culprit].name+".","ARCHIVIO")}
+}
+function score(){
+ var lies=game.notes.filter(function(n){return !n.truth}).length;
+ return Math.max(100,1000-(game.round-1)*55+game.notes.length*22+lies*30+(game.sniff?-70:80));
+}
+function finish(win,msg,winner){
+ if(game.over)return;game.over=true;busy=false;
+ var s=score(), culprit=game.suspects[game.culprit], stats=readStats();stats.played++;if(win){stats.wins++;stats.streak++;stats.best=Math.max(stats.best,s)}else stats.streak=0;saveStats(stats);
+ $("resultTitle").textContent=win?"CASO RISOLTO":"CASO CHIUSO";
+ $("resultBody").innerHTML='<div class="resultBadge">'+esc(msg)+'</div><p><b>Colpevole:</b> '+esc(culprit.name)+' ('+esc(culprit.role)+').</p><p>Era realmente in <b>'+esc(culprit.realPlace)+'</b>, aveva avuto contatto con <b>'+esc(game.sc.object)+'</b> e ha costruito un alibi falso.</p><div class="stats"><div class="stat"><b>'+s+'</b>punti</div><div class="stat"><b>'+game.round+'</b>turni</div><div class="stat"><b>'+game.notes.length+'</b>test</div></div><p style="font:12px Arial,sans-serif">Vincitore del fascicolo: '+esc(winner)+'.</p>';
+ $("resultModal").classList.add("open");renderAI();updateMorris(win?"Bravo. Questa volta il naso umano ha battuto i circuiti.":"Caso archiviato. Io però quella pista l'avevo sentita...");
+}
+function readStats(){try{return JSON.parse(localStorage.getItem("mld77stats"))||{played:0,wins:0,streak:0,best:0}}catch(e){return{played:0,wins:0,streak:0,best:0}}}
+function saveStats(s){try{localStorage.setItem("mld77stats",JSON.stringify(s))}catch(e){}}
+function showStats(){
+ var s=readStats(),rate=s.played?Math.round(s.wins/s.played*100):0;
+ $("statsGrid").innerHTML='<div class="stat"><b>'+s.played+'</b>casi</div><div class="stat"><b>'+s.wins+'</b>vittorie</div><div class="stat"><b>'+rate+'%</b>successo</div><div class="stat"><b>'+s.streak+'</b>serie</div><div class="stat"><b>'+s.best+'</b>record</div><div class="stat"><b>3</b>AI rivali</div>';$("statsModal").classList.add("open");
+}
+function start(){
+ game=buildCase();selectedId=null;busy=false;$("setup").style.display="none";$("game").classList.add("active");$("log").innerHTML="";$("needle").style.transform="rotate(0deg)";$("machineText").textContent="Fascicolo caricato. Seleziona un sospettato.";
+ log('<b>CENTRALE</b> Fascicolo '+esc(game.sc.title)+' aperto.');renderCase();window.scrollTo({top:0,behavior:"smooth"});
+}
+$("startBtn").addEventListener("click",start);$("newBtn").addEventListener("click",function(){if(game&&!game.over&&!confirm("Abbandonare il caso in corso?"))return;$("resultModal").classList.remove("open");$("game").classList.remove("active");$("setup").style.display="grid";game=null;selectedId=null});
+$("soundBtn").addEventListener("click",function(){soundOn=!soundOn;this.textContent=soundOn?"🔊 Suono ON":"🔇 Suono OFF";if(soundOn)beep(440,.08,"sine",.03)});
+$("sniffBtn").addEventListener("click",sniff);$("accuseBtn").addEventListener("click",openAccuse);$("closeAccuse").addEventListener("click",function(){$("accuseModal").classList.remove("open")});
+$("playAgain").addEventListener("click",function(){$("resultModal").classList.remove("open");start()});$("statsBtn").addEventListener("click",showStats);$("closeStats").addEventListener("click",function(){$("statsModal").classList.remove("open")});
+["accuseModal","statsModal"].forEach(function(id){$(id).addEventListener("click",function(e){if(e.target===this)this.classList.remove("open")})});
+})();
+</script>
+</body>
+</html>
