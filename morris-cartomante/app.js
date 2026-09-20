@@ -1850,3 +1850,210 @@ function localReadingV10(question){
   }
   return '<p class="answer-direct"><strong>'+direct+'</strong></p>'+details+(synthesis?'<p class="verdict"><strong>Sintesi:</strong>'+synthesis+'</p>':'');
 }
+
+
+// ===== MORRIS CARTOMANTE V16: ritual shuffle, fan choice, cinematic reveal, memory =====
+let ritualShuffleActiveV16=false, ritualShuffleEnergyV16=0, ritualLastXV16=null, ritualPointerIdV16=null;
+const HISTORY_KEY_V16="morris-cartomante-history-v1";
+
+function historyV16(){
+  try{return JSON.parse(localStorage.getItem(HISTORY_KEY_V16)||"[]")}catch(e){return[]}
+}
+function saveHistoryV16(question){
+  try{
+    const h=historyV16();
+    h.unshift({
+      t:Date.now(),
+      question,
+      spread:currentSpread,
+      cards:drawn.map(d=>({id:d.card.id,name:d.card.name,arcana:d.card.arcana,suit:d.card.suit||null,reversed:!!d.reversed,position:d.position.label}))
+    });
+    localStorage.setItem(HISTORY_KEY_V16,JSON.stringify(h.slice(0,40)));
+  }catch(e){}
+}
+function memorySummaryV16(){
+  const h=historyV16();
+  if(!h.length) return "";
+  const recent=h.slice(0,12);
+  const counts=new Map(), majors=new Map(), suits={Bastoni:0,Coppe:0,Spade:0,Denari:0};
+  recent.forEach(r=>(r.cards||[]).forEach(c=>{
+    counts.set(c.name,(counts.get(c.name)||0)+1);
+    if(c.arcana==="Maggiore") majors.set(c.name,(majors.get(c.name)||0)+1);
+    if(c.suit&&suits[c.suit]!=null) suits[c.suit]++;
+  }));
+  const top=[...counts.entries()].sort((a,b)=>b[1]-a[1]).filter(x=>x[1]>=2).slice(0,3);
+  const topMaj=[...majors.entries()].sort((a,b)=>b[1]-a[1]).filter(x=>x[1]>=2)[0];
+  const topSuit=Object.entries(suits).sort((a,b)=>b[1]-a[1])[0];
+  let txt="Ho memoria delle ultime "+recent.length+" "+(recent.length===1?"lettura":"letture")+".";
+  if(top.length) txt+=" Le carte che tornano di più sono "+top.map(([n,c])=>n+" ("+c+"×)").join(", ")+".";
+  if(topMaj) txt+=" Tra gli Arcani Maggiori insiste soprattutto "+topMaj[0]+".";
+  if(topSuit&&topSuit[1]>=3) txt+=" Il seme più ricorrente è "+topSuit[0]+".";
+  return txt;
+}
+function renderMemoryPanelV16(){
+  let panel=document.querySelector("#memoryPanelV16");
+  if(!panel){
+    panel=document.createElement("section");
+    panel.id="memoryPanelV16";
+    panel.className="memory-panel-v16";
+    result.insertAdjacentElement("afterend",panel);
+  }
+  const h=historyV16();
+  if(!h.length){panel.classList.add("hidden");return}
+  panel.classList.remove("hidden");
+  panel.innerHTML='<div class="memory-head-v16"><div><span>Morris ricorda</span><h3>Le carte che ti seguono</h3></div><button type="button" id="clearMemoryV16">Azzera memoria</button></div>'+
+    '<p>'+memorySummaryV16()+'</p>'+
+    '<div class="memory-strip-v16">'+h.slice(0,6).map(r=>'<div><small>'+new Date(r.t).toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit"})+'</small><b>'+r.cards.map(c=>c.name+(c.reversed?" ↕":"")).join(" · ")+'</b></div>').join("")+'</div>';
+  panel.querySelector("#clearMemoryV16")?.addEventListener("click",()=>{
+    localStorage.removeItem(HISTORY_KEY_V16);
+    renderMemoryPanelV16();
+    actorSayV3("Memoria azzerata.",1000);
+  });
+}
+
+function shuffleProgressV16(){
+  const p=Math.max(0,Math.min(100,Math.round(ritualShuffleEnergyV16)));
+  let el=document.querySelector("#shuffleMeterV16");
+  if(!el){
+    el=document.createElement("div");
+    el.id="shuffleMeterV16";
+    el.className="shuffle-meter-v16";
+    el.innerHTML='<span></span><b>0%</b>';
+    deckStage.appendChild(el);
+  }
+  el.querySelector("span").style.width=p+"%";
+  el.querySelector("b").textContent=p+"%";
+}
+function finishRitualShuffleV16(){
+  if(!ritualShuffleActiveV16)return;
+  ritualShuffleActiveV16=false;
+  ritualShuffleEnergyV16=100;
+  shuffleProgressV16();
+  manualDeckV12=shuffle([...deck]).map(card=>({card,reversed:reversals.checked&&rnd()<.5}));
+  oracleText.textContent="Perfetto. Il mazzo è mescolato. Ora si apre davanti a te.";
+  actorSayV3("Adesso scegli.",1200);
+  setTimeout(()=>{
+    deckStage.classList.remove("shuffling","ritual-v16");
+    document.querySelector("#shuffleMeterV16")?.remove();
+    actorIdleV3();
+    renderManualDeckV12();
+    spreadArea.classList.add("fan-mode-v16");
+    drawBtn.disabled=false;
+    drawBtn.textContent="Ricomincia il rituale";
+  },480);
+}
+function beginRitualShuffleV16(){
+  ritualShuffleActiveV16=true; ritualShuffleEnergyV16=0; ritualLastXV16=null;
+  deckStage.classList.remove("hidden");
+  deckStage.classList.add("shuffling","ritual-v16");
+  spreadArea.classList.add("hidden");
+  spreadArea.innerHTML="";
+  revealNote.classList.remove("hidden");
+  revealNote.textContent="Passa il dito avanti e indietro sul mazzo per mischiarlo.";
+  drawBtn.disabled=true;
+  drawBtn.textContent="Mischia col dito…";
+  actorShuffleV3();
+  oracleText.textContent="Muovi il dito sul mazzo. Più lo mescoli, più il mazzo cambia.";
+  shuffleProgressV16();
+}
+deckStage.addEventListener("pointerdown",e=>{
+  if(!ritualShuffleActiveV16)return;
+  ritualPointerIdV16=e.pointerId; ritualLastXV16=e.clientX;
+  try{deckStage.setPointerCapture(e.pointerId)}catch(_){}
+});
+deckStage.addEventListener("pointermove",e=>{
+  if(!ritualShuffleActiveV16||ritualPointerIdV16!==e.pointerId||ritualLastXV16==null)return;
+  const dx=Math.abs(e.clientX-ritualLastXV16); ritualLastXV16=e.clientX;
+  if(dx>1){
+    ritualShuffleEnergyV16+=Math.min(8,dx/3);
+    deckStage.style.setProperty("--shuffle-x",((e.clientX%80)-40)+"px");
+    shuffleProgressV16();
+    if(ritualShuffleEnergyV16>=100) finishRitualShuffleV16();
+  }
+});
+["pointerup","pointercancel"].forEach(ev=>deckStage.addEventListener(ev,e=>{
+  if(ritualPointerIdV16===e.pointerId){ritualPointerIdV16=null;ritualLastXV16=null}
+}));
+
+function draw(){
+  if(drawBtn.disabled)return;
+  const question=q.value.trim();
+  if(typeof vagueQuestionV8==="function"&&vagueQuestionV8(question)){
+    oracleText.textContent="Fammi una domanda un po’ più precisa prima di iniziare.";q.focus();return;
+  }
+  if(!question){oracleText.textContent="Prima scrivi la domanda.";q.focus();return}
+  if(musicEnabled)ensureAudio();
+  result.classList.add("hidden");
+  revealed=new Set();drawn=[];manualChosenV12=[];
+  beginRitualShuffleV16();
+}
+
+// Fan rendering override
+function renderManualDeckV12(){
+  deckStage.classList.add("hidden");
+  spreadArea.className="manual-deck-picker fan-mode-v16";
+  spreadArea.innerHTML="";
+  spreadArea.classList.remove("hidden");
+  revealNote.classList.remove("hidden");
+  const need=manualNeedV12();
+  revealNote.textContent="Il mazzo è aperto. Scorri il ventaglio e scegli "+need+" "+(need===1?"carta":"carte")+".";
+  manualDeckV12.forEach((item,index)=>{
+    const b=document.createElement("button");
+    b.type="button";b.className="manual-card-back";
+    const rot=((index-(manualDeckV12.length-1)/2)/manualDeckV12.length)*16;
+    const lift=Math.abs(index-(manualDeckV12.length-1)/2)/(manualDeckV12.length/2)*7;
+    b.style.setProperty("--fan-rot",rot+"deg");
+    b.style.setProperty("--fan-lift",lift+"px");
+    b.setAttribute("aria-label","Carta coperta "+(index+1));
+    b.innerHTML='<span class="manual-back-inner"><b>✦</b><i>☾</i><small>M</small></span>';
+    b.addEventListener("click",()=>chooseManualCardV12(index,b));
+    spreadArea.appendChild(b);
+  });
+}
+
+// Cinematic spread/reveal override
+function renderSpread(){
+  deckStage.classList.add("hidden");
+  spreadArea.className="spread-area "+currentSpread+" ritual-spread-v16";
+  spreadArea.innerHTML="";
+  spreadArea.classList.remove("hidden");
+  revealNote.classList.remove("hidden");
+  result.classList.add("hidden");
+  drawn.forEach((d,i)=>{
+    const slot=document.createElement("div");slot.className="card-slot";
+    const art=majorArt(d.card);
+    const face=art
+      ?'<span class="card-front major-front '+(d.reversed?"reversed":"")+'"><img class="major-art" src="'+art+'" alt="'+d.card.name+'" loading="eager"><span class="major-glow"></span></span>'
+      :'<span class="card-front '+(d.reversed?"reversed":"")+'"><em>'+d.card.arcana+'</em><b class="mark">'+mark(d.card)+'</b><strong>'+d.card.name+'</strong><small>'+(d.reversed?"Rovesciata":"Dritta")+'</small></span>';
+    slot.innerHTML='<span class="position-label">'+d.position.label+'</span><button class="tarot-card '+(art?"major-card":"")+'" type="button" aria-label="Rivela '+d.position.label+'"><span class="card-inner"><span class="card-back"><b>✦</b><i>☾</i><small>MORRIS</small></span>'+face+'</span><span class="reveal-aura-v16"></span></button>';
+    const btn=slot.querySelector("button");
+    btn.addEventListener("click",async()=>{
+      if(revealed.has(i)||btn.dataset.busy)return;
+      btn.dataset.busy="1";await morrisTouch(btn,d,i);cardWhisper();
+      btn.classList.add("cinematic-reveal-v16");
+      setTimeout(()=>{revealed.add(i);btn.classList.add("revealed");delete btn.dataset.busy;
+        oracleText.textContent=d.card.name+(d.reversed?" rovesciata":" dritta")+": "+meaning(d)+".";
+        if(revealed.size===drawn.length){
+          revealNote.classList.add("hidden");
+          setTimeout(()=>{oracleText.textContent="Ora Morris mette insieme la risposta alla tua domanda.";renderResult()},850);
+        }
+      },220);
+    });
+    spreadArea.appendChild(slot);
+  });
+}
+
+// Final result override adds memory
+function renderResult(){
+  const question=q.value.trim();
+  result.classList.remove("hidden");
+  const cardsHtml=drawn.map(d=>'<article>'+resultCardThumbV7(d)+'<span>'+d.position.label+'</span><h4>'+d.card.name+' <small>'+(d.reversed?'rovesciata':'dritta')+'</small></h4><p>'+domainInterpretationV10(d,localQuestionProfileV10(question))+'</p></article>').join("");
+  result.innerHTML='<div class="result-head"><div><span>Lettura di Morris</span><h3>“'+escapeHtmlV9(question)+'”</h3></div><p>Stesa: <strong>'+escapeHtmlV9(spreads[currentSpread]?.name||currentSpread)+'</strong></p></div>'+
+    '<div class="deep-answer"><span>Responso di Morris</span><h4>Risposta alla tua domanda</h4><div id="aiReadingText">'+localReadingV10(question)+'</div></div>'+
+    '<div class="reading">'+cardsHtml+'</div><button class="reset" id="resetBtn">Nuova domanda</button>';
+  saveHistoryV16(question);renderMemoryPanelV16();
+  actorSayV3("Questa è la lettura delle carte che hai scelto.",1800);
+  result.querySelector("#resetBtn").addEventListener("click",()=>{resetTable(true);actorIdleV3();document.querySelector("#lettura").scrollIntoView({behavior:"smooth"})});
+  result.scrollIntoView({behavior:"smooth",block:"start"});
+}
+setTimeout(renderMemoryPanelV16,0);
