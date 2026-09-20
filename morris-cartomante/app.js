@@ -1172,3 +1172,90 @@ function renderResult(){
   document.querySelector("#resetBtn").addEventListener("click",()=>{resetTable(true);actorIdleV3();document.querySelector("#lettura").scrollIntoView({behavior:"smooth"})});
   result.scrollIntoView({behavior:"smooth",block:"start"});
 }
+
+
+// ===== MORRIS CARTOMANTE V7: illustrated Major Arcana =====
+const MAJOR_ART = {
+  matto:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/51a12ac2-6a8e-4e3b-b1f5-1c4c4103802f.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiYzU2Yjg4NWI4MWY0MWJkNSIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDA1MDAxMX0.W7G5Lpd0iHZLUFwYmU4zv4Qp7ky0psu6oP_D-_6t_iE",
+  mago:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/66f821cb-262d-4185-a4c4-26b17fef111c.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiYjY1NzA1NTQ2YTIxMTk1OCIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDAyNjcwOH0.hERqzu-KnGWX681vHHyxpOo7OOrkbALw03xZwR8X90Q",
+  papessa:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/33aa33af-be03-44f0-a06e-3762ccf0d41d.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiNGMwNDZkYzNmYTA3YmQ0NSIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDA0MzQ1OX0.8NajeyBqCg02_pVxK6iZ9ijX_1rUANbv9uGCRaSF_Hc",
+  imperatrice:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/2b22d264-435b-44f8-9949-d21332e68a13.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiZDMxNzNhYjU3YzY2MjNjMCIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDEwMDUzM30.0-4AB-0_jXgLKfPt_Sh-riYpeHrSpTrRIMW5EXex0ew",
+  imperatore:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/8fc534b5-aadb-459d-8f8a-2a01e4ba0caf.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiYTAzOTBiMmMzODU2N2EzYiIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDA1MTM3Mn0.bzSGVf7ekMf2duanvVg_jqZMcCvZJ6y_76ytA3vlesk",
+  papa:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/b70d9897-3700-472a-8b8e-fe3044d61a3d.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiMDljZGQwYjIzNjQzMGUxNCIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDA5OTI1MH0.z5I9Q7Ns7am9yK___zxyui_BaFcSGbvDsGeDHTu62IY",
+  amanti:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/1f4cb66c-3ff3-4799-9c0a-4f1ed564d159.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiM2FjZDE4NGY3YTQ3YjljNSIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDAzOTYzMX0.J9wrIc899hj42PvBSMnfrx7CpAMaiaLD-Y7Vx3jtLbI",
+  carro:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/b594b146-e16d-4ca1-8f7d-fc20e6c1d58f.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiZGYxMTdlZDZlOTQ3MzMyNCIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDA4NDk1MH0.LK58-fmHcN2sz_ORhRnF3T-pcot9UBordiCj95vWZII",
+  forza:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/0a7e4d04-3410-4041-9c01-e59f4cc5fa9b.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiM2U4M2UwN2JhNDA5ZmExZSIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDA1NTY3NX0.CXCNtM_a-W2BEWotDuGaOmquHEhJ0IL0ptKuzIRvNxQ",
+  eremita:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/f4f88345-9064-4c26-9f67-6d8014e049d1.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiM2Y3OGIzMjhkZDc2NDcwNyIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDAyOTk5Mn0.40dJfhUV2QSP2sJgdJJR8x-YN0tBio-1REo9VzA1C8w",
+  ruota:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/9db43c2d-ba10-456f-add2-64c48e01628b.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiZTNhMDM5MWRmNDllYjg1NyIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDA4MzYxM30.xXSjUZw355ZpURImr7P20RmgvaVCHZIdfTViXTCL6IA",
+  giustizia:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/be03bd0a-cb10-4b38-aeff-e482177b50db.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiNTdiYjg3MGE1ZTBjMjE4MSIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDAzMjM5NH0.FeplbNOTSlSKOWDHDudWoQXhYMWPZNlH_2vypOYJkq4",
+  appeso:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/18cd941d-bb1c-4d2c-b37a-2ba55dc14caa.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiZGIxNjVmZmFhMTNjM2U4NiIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDA4MzA2Nn0.pbXSxt4YgMLDA9yWsIiI2qaeU4BHJ4s8sqwufC6A_0g",
+  morte:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/845e919d-b92c-46ee-a772-f4880f447a17.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiNTMzNGIwZWY4NWI3MmY5NCIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDAzMjQ5NX0.UxdhYRP_pz-DTXF0ExI_AYw85rwr_x9PZplFK77B8ss",
+  temperanza:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/68e52406-2cc7-4697-b478-a5e47da4cefd.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiYjZkYjA1OTAwMWIyODVlYyIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDAzNzUyMH0.OXWQmQS_BM1kkejHabRWrtWK_zrsJliVJunHx2chjf0",
+  diavolo:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/db6ff715-83cc-4a49-bf49-663a260274c7.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiMjIwZDI0M2U1ZWE1NTkyNSIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDA0NDk5MH0.KYqPjkYADj4SBtfoWfSGShD0UVYY8yGJ3av74RGiUCc",
+  torre:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/367670a9-006a-406a-aa03-b237d549b4db.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiZDM5NzFlMTVkZjgwZTAwMCIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDEwMTAxM30.MDPrp1LkaHDblIYKUeX41CzctV5t51LBL8S4jqiRNl8",
+  stella:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/ebc56452-c477-4293-952f-723ee15ce30d.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiMzA3ZGRmNTg2NDY2NjFiNSIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDA0ODM0NH0.7fX2o2aZUW5BICkLXe9FFfCW6KGUov1M3xNK-NOYVZg",
+  luna:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/c6fe7c8c-9bf3-4426-b46d-055c001ab96b.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiMjg2ZDQ0YjQxMzE1NTc0YiIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDA0NDg1Mn0.bldlqvJ4q7n-80KHM0k7-_r5fsoscq7w3k4ikoROGWM",
+  sole:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/ff6b0469-7818-4c74-af08-3f3e75539295.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiODAyNTY4Y2Y1YTUwYWRiZiIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDA3OTMxMX0.VTBsLI5QVtoLRryAaBXnCWrEjk1gxVNC6wQiQQ0iRlE",
+  giudizio:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/6d4f3f69-cfee-4331-bf54-fbf616bd3be9.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiNTkzNmRkODQwMGNhNTAyMiIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDA5NTg3Nn0.nzF0fuVChZtkweN0bi1ChcxB7tON0OlQvN19dj0DX18",
+  mondo:"https://d2jqrm6oza8nb6.cloudfront.net/datasets/e0392742-5896-4dfd-a715-09b81ebe8a95.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiYTA1OTljZGFjZmNkMzczNCIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDAyNTgxOH0.Bm6db7FiU20Mz9ejRgaMv9gu5CLspDaEDAgJVJmA96c"
+};
+
+function majorArt(c){ return c && c.arcana==="Maggiore" ? MAJOR_ART[c.id] : null; }
+
+function renderSpread(){
+  deckStage.classList.add("hidden");
+  spreadArea.className="spread-area "+currentSpread;
+  spreadArea.innerHTML="";
+  revealNote.classList.remove("hidden");
+  result.classList.add("hidden");
+  drawn.forEach((d,i)=>{
+    const slot=document.createElement("div");
+    slot.className="card-slot";
+    const art=majorArt(d.card);
+    const face = art
+      ? '<span class="card-front major-front '+(d.reversed?"reversed":"")+'"><img class="major-art" src="'+art+'" alt="'+d.card.name+'" loading="eager"><span class="major-glow"></span></span>'
+      : '<span class="card-front '+(d.reversed?"reversed":"")+'"><em>'+d.card.arcana+'</em><b class="mark">'+mark(d.card)+'</b><strong>'+d.card.name+'</strong><small>'+(d.reversed?"Rovesciata":"Dritta")+'</small></span>';
+    slot.innerHTML='<span class="position-label">'+d.position.label+'</span><button class="tarot-card '+(art?'major-card':'')+'" type="button" aria-label="Rivela '+d.position.label+'"><span class="card-inner"><span class="card-back"><b>✦</b><i>☾</i><small>MORRIS</small></span>'+face+'</span></button>';
+    const btn=slot.querySelector("button");
+    btn.addEventListener("click",async()=>{
+      if(revealed.has(i)||btn.dataset.busy)return;
+      btn.dataset.busy="1";
+      await morrisTouch(btn,d,i);
+      revealed.add(i);
+      btn.classList.add("revealed");
+      delete btn.dataset.busy;
+      oracleText.textContent=d.card.name+(d.reversed?" rovesciata":" dritta")+": "+meaning(d)+".";
+      if(revealed.size===drawn.length){
+        revealNote.classList.add("hidden");
+        setTimeout(()=>{oracleText.textContent="Ora Morris mette insieme la risposta alla tua domanda.";renderResult()},650);
+      }
+    });
+    spreadArea.appendChild(slot);
+  });
+}
+
+function resultCardThumbV7(d){
+  const art=majorArt(d.card);
+  return art ? '<img class="result-major-thumb '+(d.reversed?'is-reversed':'')+'" src="'+art+'" alt="'+d.card.name+'">' : '';
+}
+
+function renderResult(){
+  const question=q.value.trim(),a=analyseQuestionV4(question),dir=directionV4(),c=coreCardsV3(),notes=synthesis();
+  result.classList.remove("hidden");
+  const unique=[c.present,c.obstacle,c.final].filter((x,i,arr)=>x&&arr.indexOf(x)===i);
+  const evidence=unique.map(d=>'<div>'+resultCardThumbV7(d)+'<span>'+d.position.label+'</span><b>'+d.card.name+(d.reversed?' · rovesciata':' · dritta')+'</b></div>').join("");
+  const explanations=unique.map(d=>'<p><strong>'+d.position.label+' · '+d.card.name+':</strong> '+cardToQuestionV4(d,a)+'</p>').join("");
+  result.innerHTML=
+    '<div class="result-head"><div><span>Lettura di Morris</span><h3>“'+esc(question)+'”</h3></div><p>Domanda letta come: <strong>'+a.intents.join(" + ")+'</strong></p></div>'+
+    '<div class="deep-answer"><span>Risposta diretta</span><h4>'+(dir.band==="apertura"?"Apertura":dir.band==="chiusura"?"Cautela o chiusura":"Esito condizionato")+'</h4>'+
+    '<p class="answer-direct">'+exactAnswerV4(a,dir,c)+'</p>'+
+    '<div class="evidence-grid">'+evidence+'</div>'+
+    '<div class="why">'+explanations+'</div>'+
+    (notes.length?'<p><strong>Incrocio della stesa:</strong> '+notes.join(" ")+'</p>':'')+
+    '</div>'+
+    '<div class="reading">'+drawn.map(d=>'<article>'+resultCardThumbV7(d)+'<span>'+d.position.label+'</span><h4>'+d.card.name+' <small>'+(d.reversed?'rovesciata':'dritta')+'</small></h4><p>'+cardToQuestionV4(d,a)+'</p></article>').join("")+'</div>'+
+    '<button class="reset" id="resetBtn">Nuova domanda</button>';
+  actorSayV3("Ti rispondo alla domanda, non in generale.",1700);
+  document.querySelector("#resetBtn").addEventListener("click",()=>{resetTable(true);actorIdleV3();document.querySelector("#lettura").scrollIntoView({behavior:"smooth"})});
+  result.scrollIntoView({behavior:"smooth",block:"start"});
+}
