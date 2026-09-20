@@ -333,3 +333,13 @@
   .stats-grid-v17{grid-template-columns:1fr 1fr}
   .daily-history-v17{grid-template-columns:1fr}
 }
+
+
+/* v18: iPhone-safe shuffle gesture */
+.deck-stage.ritual-v16{
+  touch-action:none !important;
+  -webkit-user-select:none;
+  user-select:none;
+  overscroll-behavior:contain;
+}
+.deck-stage.ritual-v16 .deck-card{pointer-events:none}
