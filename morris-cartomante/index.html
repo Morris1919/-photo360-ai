@@ -12,9 +12,12 @@
   <header class="topbar">
     <a href="#hero" class="brand"><span class="moon">☾</span><span>Morris Cartomante</span></a>
     <nav><a href="#lettura">Leggi le carte</a><a href="#metodo">Il metodo</a></nav>
-    <button id="musicToggle" class="music-toggle" type="button" aria-pressed="true" title="Attiva o disattiva la musica">
-      <span class="music-icon">♪</span><span id="musicLabel">Atmosfera ON</span>
-    </button>
+    <div class="audio-controls">
+      <button id="musicToggle" class="music-toggle" type="button" aria-pressed="true" title="Attiva o disattiva la musica">
+        <span class="music-icon">♪</span><span id="musicLabel">Musica ON</span>
+      </button>
+      <input id="volumeSlider" class="volume-slider" type="range" min="0" max="100" value="62" aria-label="Volume musica">
+    </div>
   </header>
 
   <main>
@@ -69,6 +72,11 @@
           </div>
           <div id="deckStage" class="deck-stage" aria-hidden="true">
             <div class="deck-card a"></div><div class="deck-card b"></div><div class="deck-card c"><b>✦</b><i>☾</i><small>MORRIS</small></div>
+          </div>
+          <div id="morrisActor" class="morris-actor" aria-hidden="true">
+            <div class="actor-speech">Scelgo io.</div>
+            <img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3I2R8XV0b9op50LbwH2h8azHhrT/f70cb9d7-d3ae-4161-b7ea-a7c2bab8c6b2.jpg" alt="">
+            <span class="actor-paw">🐾</span>
           </div>
           <div id="spreadArea" class="spread-area hidden"></div>
           <p id="revealNote" class="reveal-note hidden">Tocca ogni carta per voltarla. La lettura completa compare quando la stesa è aperta.</p>
