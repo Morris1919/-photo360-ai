@@ -1394,3 +1394,79 @@ function renderResult(){
   document.querySelector("#resetBtn").addEventListener("click",()=>{resetTable(true);actorIdleV3();document.querySelector("#lettura").scrollIntoView({behavior:"smooth"})});
   result.scrollIntoView({behavior:"smooth",block:"start"});
 }
+
+
+// ===== MORRIS CARTOMANTE V9: AI reading based strictly on drawn cards =====
+const AI_READING_URL="https://morris-cartomante-ai.onrender.com/read";
+
+function aiPayloadV9(question){
+  return {
+    question,
+    spreadName:spreads[currentSpread]?.name||currentSpread,
+    cards:drawn.map(d=>({
+      position:d.position.label,
+      name:d.card.name,
+      reversed:Boolean(d.reversed),
+      meaning:meaning(d),
+      suit:d.card.suit||null,
+      arcana:d.card.arcana||null
+    }))
+  };
+}
+function escapeHtmlV9(s){
+  return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));
+}
+function renderAiTextV9(text){
+  const safe=escapeHtmlV9(text)
+    .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+    .replace(/\n{2,}/g,"</p><p>")
+    .replace(/\n/g,"<br>");
+  return "<p>"+safe+"</p>";
+}
+async function requestAiReadingV9(question){
+  const res=await fetch(AI_READING_URL,{
+    method:"POST",
+    headers:{"content-type":"application/json"},
+    body:JSON.stringify(aiPayloadV9(question))
+  });
+  if(!res.ok){
+    const e=await res.json().catch(()=>({}));
+    throw new Error(e.error||("HTTP "+res.status));
+  }
+  const data=await res.json();
+  if(!data.reading) throw new Error("empty_ai_reading");
+  return data.reading;
+}
+function renderResult(){
+  const question=q.value.trim(),a=analyseQuestionV4(question);
+  result.classList.remove("hidden");
+  const cardsHtml=drawn.map(d=>
+    '<article>'+resultCardThumbV7(d)+
+    '<span>'+d.position.label+'</span>'+
+    '<h4>'+d.card.name+' <small>'+(d.reversed?'rovesciata':'dritta')+'</small></h4>'+
+    '<p><strong>Significato-base:</strong> '+escapeHtmlV9(meaning(d))+'</p></article>'
+  ).join("");
+  result.innerHTML=
+    '<div class="result-head"><div><span>Lettura di Morris</span><h3>“'+escapeHtmlV9(question)+'”</h3></div><p>Stesa: <strong>'+escapeHtmlV9(spreads[currentSpread]?.name||currentSpread)+'</strong></p></div>'+
+    '<div class="deep-answer ai-reading-box"><span>Responso di Morris</span><h4 id="aiReadingTitle">Sto leggendo le carte...</h4>'+
+    '<div class="ai-loader"><i></i><i></i><i></i></div>'+
+    '<div id="aiReadingText"><p>Morris sta collegando la tua domanda alle carte uscite, alla loro posizione e al loro orientamento.</p></div></div>'+
+    '<div class="reading">'+cardsHtml+'</div>'+
+    '<button class="reset" id="resetBtn">Nuova domanda</button>';
+  actorSayV3("Ora leggo davvero queste carte.",1700);
+  document.querySelector("#resetBtn").addEventListener("click",()=>{resetTable(true);actorIdleV3();document.querySelector("#lettura").scrollIntoView({behavior:"smooth"})});
+  result.scrollIntoView({behavior:"smooth",block:"start"});
+  requestAiReadingV9(question).then(reading=>{
+    const title=document.querySelector("#aiReadingTitle"),box=document.querySelector("#aiReadingText"),loader=result.querySelector(".ai-loader");
+    if(title)title.textContent="Risposta alla tua domanda";
+    if(loader)loader.remove();
+    if(box)box.innerHTML=renderAiTextV9(reading);
+    actorSayV3("Questa è la lettura delle carte uscite.",1800);
+  }).catch(err=>{
+    const title=document.querySelector("#aiReadingTitle"),box=document.querySelector("#aiReadingText"),loader=result.querySelector(".ai-loader");
+    if(title)title.textContent="Lettura AI non disponibile";
+    if(loader)loader.remove();
+    if(box)box.innerHTML='<p>Il motore AI non è ancora configurato sul server. Le carte sono state estratte correttamente, ma non voglio sostituire il responso con una frase generica.</p>';
+    console.error("Morris AI error",err);
+  });
+}
