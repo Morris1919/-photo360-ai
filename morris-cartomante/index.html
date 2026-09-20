@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0e1726">
+  <title>Morris Cartomante</title>
+  <meta name="description" content="Una web app di tarocchi Rider-Waite-Smith con 78 carte, stese reali e lettura contestuale.">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="#hero" class="brand"><span class="moon">☾</span><span>Morris Cartomante</span></a>
+    <nav><a href="#lettura">Leggi le carte</a><a href="#metodo">Il metodo</a></nav>
+  </header>
+
+  <main>
+    <section id="hero" class="hero">
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="hero-shade"></div>
+      <div class="hero-copy">
+        <p class="eyebrow">Rider-Waite-Smith, 78 carte</p>
+        <h1>Chiedi alle carte.<br>Morris ascolta.</h1>
+        <p>Una lettura costruita sulla stesa, sulle carte dritte e rovesciate e sui rapporti tra i simboli.</p>
+        <a class="cta" href="#lettura">Inizia la lettura</a>
+      </div>
+      <div class="scroll-cue">SCORRI <span>↓</span></div>
+    </section>
+
+    <section id="lettura" class="reader-shell">
+      <div class="section-head">
+        <div><p class="eyebrow">Morris legge. Tu fai la domanda.</p><h2>Una stesa vera,<br>non frasi a caso.</h2></div>
+        <p>Il mazzo contiene 78 carte Rider-Waite-Smith. La lettura considera posizione, orientamento, semi, Arcani Maggiori e relazioni elementali.</p>
+      </div>
+
+      <div class="reader-grid">
+        <aside class="controls">
+          <label class="question-label">La tua domanda
+            <textarea id="question" maxlength="280" rows="3" placeholder="Per esempio: che dinamica c'è davvero in questa situazione?"></textarea>
+          </label>
+
+          <fieldset>
+            <legend>Scegli la stesa</legend>
+            <label class="spread-option active" data-spread-label="three">
+              <input type="radio" name="spread" value="three" checked>
+              <strong>Tre carte</strong><span>Passato, presente e futuro come linea evolutiva.</span>
+            </label>
+            <label class="spread-option" data-spread-label="one">
+              <input type="radio" name="spread" value="one">
+              <strong>Una carta</strong><span>Un messaggio centrale per una domanda precisa.</span>
+            </label>
+            <label class="spread-option" data-spread-label="celtic">
+              <input type="radio" name="spread" value="celtic">
+              <strong>Croce Celtica</strong><span>Dieci posizioni per situazione, ostacolo, radici e sviluppo.</span>
+            </label>
+          </fieldset>
+
+          <label class="toggle"><input id="reversals" type="checkbox" checked><span>Usa anche le carte rovesciate</span></label>
+          <button id="drawBtn" class="primary">Inizia la lettura</button>
+        </aside>
+
+        <section class="table">
+          <div class="oracle">
+            <img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3I2R8XV0b9op50LbwH2h8azHhrT/f70cb9d7-d3ae-4161-b7ea-a7c2bab8c6b2.jpg" alt="Morris, il cartomante">
+            <div><span>Morris</span><p id="oracleText">Fammi una domanda chiara. Al resto penso io.</p></div>
+          </div>
+          <div id="deckStage" class="deck-stage" aria-hidden="true">
+            <div class="deck-card a"></div><div class="deck-card b"></div><div class="deck-card c"><b>✦</b><i>☾</i><small>MORRIS</small></div>
+          </div>
+          <div id="spreadArea" class="spread-area hidden"></div>
+          <p id="revealNote" class="reveal-note hidden">Tocca ogni carta per voltarla. La lettura completa compare quando la stesa è aperta.</p>
+        </section>
+      </div>
+
+      <section id="result" class="result hidden"></section>
+    </section>
+
+    <section id="metodo" class="method">
+      <div class="method-copy">
+        <p class="eyebrow">Come legge Morris</p>
+        <h2>Il significato cambia con la posizione.</h2>
+        <p>Una carta non viene trattata come una risposta isolata. Morris considera la funzione della posizione nella stesa, l'orientamento, gli Arcani Maggiori, i semi dominanti, le figure di corte e le relazioni tra carte vicine.</p>
+      </div>
+      <div class="method-grid">
+        <article><span>01</span><h3>Posizione</h3><p>La stessa carta parla in modo diverso se descrive il passato, una sfida o un esito potenziale.</p></article>
+        <article><span>02</span><h3>Orientamento</h3><p>Le carte rovesciate non sono automaticamente negative. Possono indicare energia interna, blocco o revisione.</p></article>
+        <article><span>03</span><h3>Relazioni</h3><p>Fuoco e Aria tendono a sostenersi, Acqua e Terra pure. Altri incontri creano attrito e cambiano il tono della stesa.</p></article>
+        <article><span>04</span><h3>Gerarchia</h3><p>Molti Arcani Maggiori spostano la lettura dai dettagli quotidiani ai passaggi strutturali e alle scelte di fondo.</p></article>
+      </div>
+    </section>
+
+    <section class="note">
+      <img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3I2R8XV0b9op50LbwH2h8azHhrT/f70cb9d7-d3ae-4161-b7ea-a7c2bab8c6b2.jpg" alt="Morris">
+      <div><h2>Morris non promette il futuro.</h2><p>Le carte sono usate come linguaggio simbolico per leggere dinamiche, tendenze e punti ciechi. Le decisioni restano tue.</p></div>
+    </section>
+  </main>
+
+  <footer><span>☾ Morris Cartomante</span><span>Rider-Waite-Smith, lettura simbolica</span></footer>
+  <script src="./app.js"></script>
+</body>
+</html>
