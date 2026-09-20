@@ -2322,3 +2322,53 @@ renderResult=function(){
 };
 
 setTimeout(ensurePremiumUIV17,0);
+
+
+// ===== MORRIS CARTOMANTE V18: iPhone-safe ritual shuffle =====
+let touchLastXV18=null;
+
+function addShuffleEnergyV18(amount,x){
+  if(!ritualShuffleActiveV16)return;
+  ritualShuffleEnergyV16+=Math.max(2,Math.min(12,amount));
+  if(Number.isFinite(x)) deckStage.style.setProperty("--shuffle-x",((x%90)-45)+"px");
+  shuffleProgressV16();
+  if(navigator.vibrate && ritualShuffleEnergyV16<100) navigator.vibrate(6);
+  if(ritualShuffleEnergyV16>=100) finishRitualShuffleV16();
+}
+
+// Taps also genuinely advance the manual shuffle, useful when iOS suppresses drag events.
+deckStage.addEventListener("click",e=>{
+  if(!ritualShuffleActiveV16)return;
+  addShuffleEnergyV18(11,e.clientX||40);
+});
+
+// Native touch fallback for Safari/iPhone.
+deckStage.addEventListener("touchstart",e=>{
+  if(!ritualShuffleActiveV16)return;
+  const t=e.touches&&e.touches[0];
+  touchLastXV18=t?t.clientX:null;
+  if(e.cancelable)e.preventDefault();
+},{passive:false});
+
+deckStage.addEventListener("touchmove",e=>{
+  if(!ritualShuffleActiveV16)return;
+  const t=e.touches&&e.touches[0];
+  if(!t)return;
+  if(touchLastXV18==null)touchLastXV18=t.clientX;
+  const dx=Math.abs(t.clientX-touchLastXV18);
+  touchLastXV18=t.clientX;
+  if(dx>1)addShuffleEnergyV18(dx/2.4,t.clientX);
+  if(e.cancelable)e.preventDefault();
+},{passive:false});
+
+deckStage.addEventListener("touchend",e=>{
+  touchLastXV18=null;
+  if(e.cancelable)e.preventDefault();
+},{passive:false});
+
+const beginRitualShuffleV18Base=beginRitualShuffleV16;
+beginRitualShuffleV16=function(){
+  beginRitualShuffleV18Base();
+  revealNote.textContent="Passa il dito avanti e indietro sul mazzo. Se preferisci, puoi anche toccarlo più volte.";
+  oracleText.textContent="Mischialo tu: trascina il dito sul mazzo oppure toccalo più volte.";
+};
