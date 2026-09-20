@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0e1726">
   <title>Morris Cartomante</title>
   <meta name="description" content="Una web app di tarocchi Rider-Waite-Smith con 78 carte, stese reali e lettura contestuale.">
-  <link rel="stylesheet" href="./styles.css?v=10">
+  <link rel="stylesheet" href="./styles.css?v=12">
 </head>
 <body>
   <header class="topbar">
@@ -27,7 +27,7 @@
       <div class="hero-copy">
         <p class="eyebrow">Rider-Waite-Smith, 78 carte</p>
         <h1>Chiedi alle carte.<br>Morris ascolta.</h1>
-        <p>Una lettura costruita sulla stesa, sulle carte dritte e rovesciate e sui rapporti tra i simboli.</p>
+        <p>Mischia il mazzo, scegli personalmente le carte e poi lascia che Morris interpreti la stesa.</p>
         <a class="cta" href="#lettura">Inizia la lettura</a>
       </div>
       <div class="scroll-cue">SCORRI <span>↓</span></div>
@@ -35,7 +35,7 @@
 
     <section id="lettura" class="reader-shell">
       <div class="section-head">
-        <div><p class="eyebrow">Morris legge. Tu fai la domanda.</p><h2>Una stesa vera,<br>non frasi a caso.</h2></div>
+        <div><p class="eyebrow">Tu fai la domanda. Tu scegli le carte.</p><h2>Una stesa vera,<br>non frasi a caso.</h2></div>
         <p>Il mazzo contiene 78 carte Rider-Waite-Smith. La lettura considera posizione, orientamento, semi, Arcani Maggiori e relazioni elementali.</p>
       </div>
 
@@ -62,19 +62,19 @@
           </fieldset>
 
           <label class="toggle"><input id="reversals" type="checkbox" checked><span>Usa anche le carte rovesciate</span></label>
-          <button id="drawBtn" class="primary">Inizia la lettura</button>
+          <button id="drawBtn" class="primary">Mischia il mazzo</button>
         </aside>
 
         <section class="table">
           <div class="oracle">
             <img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3I2R8XV0b9op50LbwH2h8azHhrT/f70cb9d7-d3ae-4161-b7ea-a7c2bab8c6b2.jpg" alt="Morris, il cartomante">
-            <div><span>Morris</span><p id="oracleText">Fammi una domanda chiara. Al resto penso io.</p></div>
+            <div><span>Morris</span><p id="oracleText">Fammi una domanda chiara. Poi mischia e scegli tu le carte.</p></div>
           </div>
           <div id="deckStage" class="deck-stage" aria-hidden="true">
             <div class="deck-card a"></div><div class="deck-card b"></div><div class="deck-card c"><b>✦</b><i>☾</i><small>MORRIS</small></div>
           </div>
           <div id="morrisActor" class="morris-actor" aria-hidden="true">
-            <div class="actor-speech">Scelgo io.</div>
+            <div class="actor-speech">Scegli tu.</div>
             <img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3I2R8XV0b9op50LbwH2h8azHhrT/f70cb9d7-d3ae-4161-b7ea-a7c2bab8c6b2.jpg" alt="">
             <span class="actor-paw">🐾</span>
           </div>
@@ -107,6 +107,6 @@
   </main>
 
   <footer><span>☾ Morris Cartomante</span><span>Rider-Waite-Smith, lettura simbolica</span></footer>
-  <script src="./app.js?v=11"></script>
+  <script src="./app.js?v=12"></script>
 </body>
 </html>
