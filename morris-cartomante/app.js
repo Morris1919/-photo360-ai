@@ -340,3 +340,260 @@ function renderResult(){
   document.querySelector("#resetBtn").addEventListener("click",()=>{resetTable(true);document.querySelector("#lettura").scrollIntoView({behavior:"smooth"})});
   result.scrollIntoView({behavior:"smooth",block:"start"});
 }
+
+
+
+// ===== MORRIS CARTOMANTE V3: specific answers, audible score, visible actor =====
+const volumeSliderV3=document.querySelector("#volumeSlider");
+const morrisActor=document.querySelector("#morrisActor");
+const actorSpeech=morrisActor?.querySelector(".actor-speech");
+
+function volumeTargetV3(){
+  const v=volumeSliderV3?Number(volumeSliderV3.value)/100:.62;
+  return Math.max(.12,Math.min(.62,.12+v*.55));
+}
+function ensureAudio(){
+  if(!audioCtx){
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    masterGain=audioCtx.createGain();
+    masterGain.gain.value=.0001;
+    masterGain.connect(audioCtx.destination);
+  }
+  if(audioCtx.state==="suspended") audioCtx.resume();
+  if(!droneStarted) startDrone();
+  if(musicEnabled&&!musicTimer) startMusicLoop();
+  if(musicEnabled) fadeMaster(volumeTargetV3(),.35);
+}
+function startDrone(){
+  droneStarted=true;
+  const bus=audioCtx.createGain(); bus.gain.value=.20; bus.connect(masterGain);
+  const filter=audioCtx.createBiquadFilter();filter.type="lowpass";filter.frequency.value=520;filter.Q.value=.8;filter.connect(bus);
+  [[73.42,"sine",.38],[110,"triangle",.18],[146.83,"sine",.08]].forEach(([freq,type,gain])=>{
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.type=type;o.frequency.value=freq;g.gain.value=gain;o.connect(g);g.connect(filter);o.start();
+  });
+  const seconds=2,buffer=audioCtx.createBuffer(1,audioCtx.sampleRate*seconds,audioCtx.sampleRate),data=buffer.getChannelData(0);
+  let last=0;
+  for(let i=0;i<data.length;i++){const white=Math.random()*2-1;last=(last+.02*white)/1.02;data[i]=last*2.6}
+  const noise=audioCtx.createBufferSource(),ng=audioCtx.createGain(),nf=audioCtx.createBiquadFilter();
+  noise.buffer=buffer;noise.loop=true;ng.gain.value=.035;nf.type="lowpass";nf.frequency.value=900;
+  noise.connect(nf);nf.connect(ng);ng.connect(bus);noise.start();
+  fadeMaster(musicEnabled?volumeTargetV3():.0001,.7);
+}
+function setMusic(on){
+  musicEnabled=on;
+  musicToggle?.setAttribute("aria-pressed",String(on));
+  if(musicLabel)musicLabel.textContent=on?"Musica ON":"Musica OFF";
+  if(on){ensureAudio();fadeMaster(volumeTargetV3(),.25);startMusicLoop();atmospherePhrase()}
+  else{fadeMaster(.0001,.3);stopMusicLoop()}
+}
+volumeSliderV3?.addEventListener("input",()=>{if(musicEnabled){ensureAudio();fadeMaster(volumeTargetV3(),.12)}});
+
+function actorSayV3(text,hold=950){
+  if(!morrisActor||!actorSpeech)return;
+  actorSpeech.textContent=text;
+  morrisActor.classList.add("talking");
+  clearTimeout(actorSayV3.t);
+  actorSayV3.t=setTimeout(()=>morrisActor.classList.remove("talking"),hold);
+}
+function actorIdleV3(){
+  if(!morrisActor)return;
+  morrisActor.style.transform="";
+  morrisActor.classList.remove("shuffle","choose");
+  morrisActor.classList.add("idle");
+}
+function actorShuffleV3(){
+  if(!morrisActor)return;
+  morrisActor.classList.remove("idle","choose");
+  morrisActor.classList.add("shuffle","talking");
+  actorSayV3("Mescolo io.",1100);
+}
+function morrisTouch(target,d,i){
+  return new Promise(resolve=>{
+    if(!morrisActor){resolve();return}
+    const table=document.querySelector(".table");
+    morrisActor.classList.remove("idle","shuffle");
+    morrisActor.classList.add("choose","talking");
+    const a=morrisActor.getBoundingClientRect(),t=target.getBoundingClientRect(),box=table.getBoundingClientRect();
+    let dx=(t.left+t.width/2)-(a.left+a.width/2);
+    let dy=(t.top+t.height*.48)-(a.top+a.height/2);
+    dx=Math.max(-box.width+130,Math.min(20,dx));
+    dy=Math.max(-30,Math.min(box.height-150,dy));
+    actorSayV3(i===0?"Questa apre la stesa.":i===drawn.length-1?"Questa chiude il quadro.":"Vediamo questa.",1050);
+    morrisActor.style.transform="translate("+dx+"px,"+dy+"px) scale(.88) rotate(-5deg)";
+    target.classList.add("morris-touched");
+    cardWhisper();
+    setTimeout(()=>{
+      morrisActor.style.transform="translate("+dx+"px,"+dy+"px) scale(.84) rotate(4deg)";
+    },360);
+    setTimeout(()=>{
+      target.classList.remove("morris-touched");
+      morrisActor.style.transform="";
+      morrisActor.classList.remove("choose");
+      morrisActor.classList.add("idle");
+      resolve();
+    },760);
+  });
+}
+
+const positiveIdsV3=new Set(["mago","imperatrice","carro","forza","temperanza","stella","sole","giudizio","mondo"]);
+const difficultIdsV3=new Set(["diavolo","torre"]);
+function cardScoreV3(d){
+  let s=cardScore(d);
+  if(d.card.arcana==="Maggiore"){
+    if(positiveIdsV3.has(d.card.id))s+=d.reversed?0:1.4;
+    if(difficultIdsV3.has(d.card.id))s+=d.reversed?.2:-1.4;
+    if(d.card.id==="luna")s-=d.reversed?.2:.8;
+    if(d.card.id==="morte")s+=d.reversed?-.6:.1;
+  }
+  const label=d.position.label.toLowerCase();
+  let w=1;
+  if(/futuro|esito|possibile/.test(label))w=2.25;
+  else if(/presente/.test(label))w=1.55;
+  else if(/prossimo/.test(label))w=1.8;
+  else if(/sfida/.test(label))w=.8;
+  return s*w;
+}
+function analyseQuestionV3(text){
+  const raw=text.trim(),low=raw.toLowerCase();
+  let intent="generale";
+  if(/torner|ritorn|ritorno|rientrer|riavvicin/.test(low))intent="ritorno";
+  else if(/scriver|messagg|contatt|chiamer|cercher/.test(low))intent="contatto";
+  else if(/mi ama|ama me|prova per me|cosa prova|sentiment|innamorat|attraz/.test(low))intent="sentimenti";
+  else if(/tradisc|tradiment|fedele|mentendo|mente |nasconde|sincer/.test(low))intent="fiducia";
+  else if(/lascer|separ|staremo insieme|futuro.*relaz|relaz.*futuro|coppia.*futuro/.test(low))intent="relazione";
+  else if(/lavor|carriera|cliente|azienda|assunt|contratto|profession/.test(low))intent="lavoro";
+  else if(/sold|denar|econom|finanz|guadagn|entrate|spese/.test(low))intent="risorse";
+  else if(/devo|dovrei|conviene|scegl|decision|faccio bene/.test(low))intent="decisione";
+  else if(/quando|quanto tempo|entro quando/.test(low))intent="tempo";
+  else if(/succeder|evolver|svilupp|andrà|andra|futuro/.test(low))intent="sviluppo";
+
+  const stop=new Set(["Come","Cosa","Quando","Perché","Perche","Secondo","Vorrei","Voglio","Dimmi","Morris","Tarocchi","Carta","Carte","Sarà","Sara","Potrà","Potra","Devo","Dovrei"]);
+  const names=(raw.match(/\b[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]{2,}\b/g)||[]).filter(x=>!stop.has(x));
+  const subject=names[0]||(/\blui\b|\blo\b|\bsuo\b/.test(low)?"lui":(/\blei\b|\bla\b|\bsua\b/.test(low)?"lei":"la situazione"));
+  return{raw,low,intent,subject,domain:topic(raw)};
+}
+function directionV3(){
+  const total=drawn.reduce((sum,d)=>sum+cardScoreV3(d),0);
+  const max=Math.max(4,drawn.length*2.1);
+  const norm=Math.max(-1,Math.min(1,total/max));
+  return{total,norm,band:norm>.24?"apertura":norm<-.24?"chiusura":"incerto"};
+}
+function coreCardsV3(){
+  const final=findByLabel("futuro","esito","possibile")||drawn[drawn.length-1];
+  const present=findByLabel("presente")||drawn[Math.min(1,drawn.length-1)]||drawn[0];
+  const obstacle=findByLabel("sfida")||null;
+  return{present,obstacle,final};
+}
+function contextualMeaningV3(d,a){
+  const who=a.subject==="la situazione"?"questa situazione":a.subject;
+  const pos=d.position.label.toLowerCase();
+  let lead="";
+  if(/passato|radice/.test(pos))lead="Spiega da dove nasce il tema che hai chiesto";
+  else if(/presente/.test(pos))lead="Descrive ciò che è attivo adesso rispetto alla tua domanda";
+  else if(/sfida/.test(pos))lead="Mostra che cosa ostacola o complica la risposta";
+  else if(/futuro|esito|possibile/.test(pos))lead="Mostra la direzione verso cui tende "+who;
+  else if(/prossimo/.test(pos))lead="Mostra il prossimo passaggio concreto";
+  else lead="Aggiunge un tassello specifico alla tua domanda";
+  return lead+": "+meaning(d)+".";
+}
+function directAnswerV3(a,dir,c){
+  const who=a.subject==="la situazione"?"questa situazione":a.subject;
+  const end=c.final?c.final.card.name+(c.final.reversed?" rovesciata":" dritta"):"la carta finale";
+  const now=c.present?c.present.card.name+(c.present.reversed?" rovesciata":" dritta"):"la carta del presente";
+  const yes=dir.band==="apertura",no=dir.band==="chiusura";
+  if(a.intent==="ritorno"){
+    if(yes)return"Se mi chiedi se "+who+" tornerà o si riavvicinerà, la stesa <strong>tende al sì</strong>, ma non a un ritorno identico a prima. "+now+" descrive il punto attuale, mentre "+end+" spinge verso una riapertura.";
+    if(no)return"Se mi chiedi se "+who+" tornerà, la stesa <strong>non mostra al momento un ritorno stabile</strong>. "+end+" pesa più delle carte di apertura e indica che, nelle condizioni attuali, il riavvicinamento resta difficile.";
+    return"Se mi chiedi se "+who+" tornerà, la risposta è <strong>condizionata</strong>: c'è un margine di riapertura, ma non abbastanza netto da parlare di ritorno certo. Il passaggio fra "+now+" e "+end+" è il punto decisivo.";
+  }
+  if(a.intent==="contatto"){
+    if(yes)return"Alla domanda se "+who+" ti cercherà o ti contatterà, la stesa <strong>favorisce un contatto</strong>. Non significa necessariamente riconciliazione: "+end+" descrive soprattutto l'esito del movimento.";
+    if(no)return"Alla domanda se "+who+" ti contatterà, la stesa <strong>non dà un segnale forte di iniziativa</strong>. "+end+" tende più a trattenere o allontanare il movimento che a riaprirlo.";
+    return"Alla domanda se "+who+" ti contatterà, le carte mostrano <strong>possibilità ma poca linearità</strong>: il contatto può esserci, ma dipende da un nodo ancora irrisolto.";
+  }
+  if(a.intent==="sentimenti"){
+    if(yes)return"Se la domanda è ciò che "+who+" prova per te, la stesa mostra <strong>coinvolgimento o apertura emotiva reale</strong>, anche se va distinto da ciò che questa persona riesce poi a fare concretamente. "+end+" è la carta che pesa di più sulla direzione.";
+    if(no)return"Se la domanda è ciò che "+who+" prova per te, la stesa mostra <strong>sentimenti bloccati, insufficienti o difficili da esprimere</strong> più che un'apertura limpida. "+end+" rafforza questa cautela.";
+    return"Se la domanda è ciò che "+who+" prova per te, le carte mostrano <strong>ambivalenza</strong>: qualcosa c'è, ma non emerge come sentimento semplice, libero e lineare.";
+  }
+  if(a.intent==="fiducia"){
+    return"Le carte <strong>non possono verificare un tradimento o una bugia come fatto</strong>. Simbolicamente, però, la stesa "+(yes?"mostra più apertura e possibilità di chiarimento":"segnala opacità, tensione o elementi da verificare con i fatti")+". "+end+" è la carta più importante per capire il tono finale.";
+  }
+  if(a.intent==="relazione"){
+    if(yes)return"Rispetto al futuro della relazione con "+who+", la stesa mostra <strong>possibilità di continuità o miglioramento</strong>, ma non senza cambiare il nodo che emerge nel presente.";
+    if(no)return"Rispetto al futuro della relazione con "+who+", la stesa mostra <strong>una fase di chiusura, distanza o forte ridimensionamento</strong> se le dinamiche restano quelle attuali.";
+    return"Rispetto al futuro della relazione con "+who+", la stesa descrive <strong>un equilibrio instabile</strong>: non è una chiusura netta, ma nemmeno una conferma piena.";
+  }
+  if(a.intent==="lavoro"){
+    return"Alla tua domanda sul lavoro, la stesa indica <strong>"+(yes?"margine di sviluppo e possibilità concrete":no?"ostacoli o ridimensionamento da non ignorare":"un risultato possibile ma ancora dipendente da condizioni pratiche")+"</strong>. "+end+" descrive meglio di tutte dove porta il quadro attuale.";
+  }
+  if(a.intent==="risorse"){
+    return"Alla domanda economica, le carte mostrano <strong>"+(yes?"una tendenza a stabilizzazione o crescita":no?"prudenza, ritardo o pressione sulle risorse":"un quadro misto che richiede gestione e verifica")+"</strong>. Qui il valore della stesa è soprattutto capire dove stai assumendo o riducendo rischio.";
+  }
+  if(a.intent==="decisione"){
+    return"Alla domanda se conviene fare questa scelta, la stesa <strong>"+(yes?"la sostiene più di quanto la ostacoli":no?"invita a non forzarla nelle condizioni attuali":"non la boccia, ma chiede prima di sciogliere il nodo centrale")+"</strong>. "+now+" spiega il punto di partenza e "+end+" il costo o beneficio della direzione.";
+  }
+  if(a.intent==="tempo"){
+    return"Se stai chiedendo <strong>quando</strong>, il mazzo non dà una data affidabile. Può però mostrare se il movimento è vicino o rallentato: in questa stesa "+(yes?"la dinamica è relativamente mobile":"la dinamica appare lenta o trattenuta")+", e "+end+" è il segnale principale.";
+  }
+  if(a.intent==="sviluppo"){
+    return"Alla domanda su come evolverà la situazione, la stesa tende verso <strong>"+(yes?"un'apertura o un avanzamento":no?"una chiusura o un rallentamento":"un esito ancora aperto e condizionato")+"</strong>. Il passaggio da "+now+" a "+end+" racconta la traiettoria.";
+  }
+  return"Rispetto esattamente alla domanda “"+esc(a.raw)+"”, Morris leggerebbe la stesa come <strong>"+(yes?"più favorevole che contraria":no?"più frenata che favorevole":"non ancora risolta")+"</strong>. La risposta nasce soprattutto dal rapporto fra "+now+" e "+end+".";
+}
+function whyV3(a,c){
+  const bits=[];
+  if(c.present)bits.push("<strong>"+c.present.position.label+" · "+c.present.card.name+"</strong>: "+contextualMeaningV3(c.present,a));
+  if(c.obstacle)bits.push("<strong>"+c.obstacle.position.label+" · "+c.obstacle.card.name+"</strong>: "+contextualMeaningV3(c.obstacle,a));
+  if(c.final&&c.final!==c.present)bits.push("<strong>"+c.final.position.label+" · "+c.final.card.name+"</strong>: "+contextualMeaningV3(c.final,a));
+  return bits;
+}
+
+function draw(){
+  const question=q.value.trim();
+  if(!question){
+    q.focus(); q.style.boxShadow="0 0 0 3px #c77d8755";
+    setTimeout(()=>q.style.boxShadow="",700);
+    oracleText.textContent="Prima scrivi una domanda precisa. Altrimenti Morris non sa a cosa rispondere.";
+    actorSayV3("Prima la domanda.",1200);
+    return;
+  }
+  if(drawBtn.disabled)return;
+  ensureAudio();
+  atmospherePhrase();
+  drawBtn.disabled=true;
+  result.classList.add("hidden");
+  spreadArea.classList.add("hidden");spreadArea.innerHTML="";revealNote.classList.add("hidden");
+  deckStage.classList.remove("hidden");deckStage.classList.add("shuffling");
+  actorShuffleV3();
+  oracleText.textContent="Morris legge la domanda e mescola il mazzo...";
+  const pool=shuffle([...deck]);
+  const nextDraw=spreads[currentSpread].positions.map((position,i)=>({card:pool[i],reversed:reversals.checked&&rnd()<.34,position}));
+  setTimeout(()=>{
+    drawn=nextDraw;revealed=new Set();deckStage.classList.remove("shuffling");
+    renderSpread();drawBtn.textContent="Mescola ancora";drawBtn.disabled=false;actorIdleV3();
+    oracleText.textContent="Le carte sono scelte. Morris le apre una per volta.";
+  },1250);
+}
+
+function renderResult(){
+  const question=q.value.trim(),a=analyseQuestionV3(question),dir=directionV3(),c=coreCardsV3(),notes=synthesis(),why=whyV3(a,c);
+  result.classList.remove("hidden");
+  const evidence=[c.present,c.obstacle,c.final].filter((x,i,arr)=>x&&arr.indexOf(x)===i).map(d=>'<div><span>'+d.position.label+'</span><b>'+d.card.name+(d.reversed?' · rovesciata':' · dritta')+'</b></div>').join("");
+  result.innerHTML=
+    '<div class="result-head"><div><span>Lettura di Morris</span><h3>“'+esc(question)+'”</h3></div><p>Domanda letta come: <strong>'+a.intent+'</strong></p></div>'+
+    '<div class="reading">'+drawn.map(d=>'<article><span>'+d.position.label+'</span><h4>'+d.card.name+' <small>'+(d.reversed?'rovesciata':'dritta')+'</small></h4><p><strong>Rispetto alla tua domanda:</strong> '+contextualMeaningV3(d,a)+'</p></article>').join("")+'</div>'+
+    '<div class="deep-answer"><span>Risposta alla tua domanda</span><h4>'+(dir.band==="apertura"?"Tendenza favorevole":dir.band==="chiusura"?"Tendenza di chiusura o cautela":"Risposta condizionata")+'</h4>'+
+    '<p class="answer-direct">'+directAnswerV3(a,dir,c)+'</p>'+
+    '<div class="evidence-grid">'+evidence+'</div>'+
+    '<div class="why">'+why.map(p=>'<p>'+p+'</p>').join("")+'</div>'+
+    (notes.length?'<p><strong>Come si combinano:</strong> '+notes.join(" ")+'</p>':'')+
+    '<p class="verdict"><strong>Conclusione di Morris:</strong> questa non è una frase generica sul futuro. È la lettura simbolica di queste carte rispetto alla domanda che hai scritto. Se cambi domanda, cambia anche il criterio con cui vengono interpretate.</p></div>'+
+    '<div class="synthesis"><img src="'+MORRIS_IMG+'" alt=""><div><span>Morris</span><p>'+directAnswerV3(a,dir,c)+'</p><p class="final">Le carte mostrano tendenze e dinamiche, non prove o certezze fattuali.</p></div></div>'+
+    '<button class="reset" id="resetBtn">Nuova domanda</button>';
+  actorSayV3("Questa è la mia risposta.",1500);
+  document.querySelector("#resetBtn").addEventListener("click",()=>{resetTable(true);actorIdleV3();document.querySelector("#lettura").scrollIntoView({behavior:"smooth"})});
+  result.scrollIntoView({behavior:"smooth",block:"start"});
+}
+actorIdleV3();
