@@ -173,3 +173,29 @@
   border-color:#d7bb79 !important;
   filter:saturate(.78) brightness(.82);
 }
+
+
+/* v15: official Morris back also on the initial deck stack */
+#deckStage .deck-card,
+.deck-stage .deck-card{
+  background-image:url("https://d2jqrm6oza8nb6.cloudfront.net/datasets/5c5d5aad-3b2c-4774-8ee7-96d49abe7263.jpeg?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiMmEzYzZhZGE2ZmU2NDg4NCIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDA3MTM4Nn0.GFDedWzZBhgYLLRYLfvSEaCWzmFN3RKgqBWPlilP8Uc") !important;
+  background-size:cover !important;
+  background-position:center center !important;
+  background-repeat:no-repeat !important;
+  background-color:#07162b !important;
+  border:1px solid rgba(236,220,170,.72) !important;
+  box-shadow:0 24px 40px #0006,inset 0 0 0 1px rgba(255,255,255,.08) !important;
+}
+#deckStage .deck-card::before,
+.deck-stage .deck-card::before{
+  display:none !important;
+  content:none !important;
+}
+#deckStage .deck-card b,
+#deckStage .deck-card i,
+#deckStage .deck-card small,
+.deck-stage .deck-card b,
+.deck-stage .deck-card i,
+.deck-stage .deck-card small{
+  display:none !important;
+}
