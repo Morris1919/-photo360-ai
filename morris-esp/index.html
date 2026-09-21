@@ -27,7 +27,7 @@ radial-gradient(circle at 30% 20%,#fff2 0 1px,transparent 1.5px);background-size
 #home{justify-content:center}
 .seal{width:154px;height:154px;border:1px solid #8f7a5d;border-radius:50%;position:relative;margin-bottom:22px;box-shadow:0 0 0 6px #ffffff08,0 24px 60px #0008;overflow:hidden;background:#191715}
 .seal:before,.seal:after{content:"";position:absolute;border-radius:50%}.seal:before{inset:9px;border:1px solid #8f7a5d66}.seal:after{width:10px;height:10px;background:#8b2e2c;bottom:10px}
-.morris-photo{position:absolute;inset:5px;border-radius:50%;background-image:var(--morris-photo);background-size:cover;background-position:center 49%;background-repeat:no-repeat;box-shadow:inset 0 0 0 1px #ffffff22}
+.morris-photo{position:absolute;inset:5px;border-radius:50%;background-image:url("./morris-photo.svg?v=6");background-size:cover;background-position:center center;background-repeat:no-repeat;box-shadow:inset 0 0 0 1px #ffffff22}
 .scan .morris-photo{inset:18px;background-position:center 49%}
 .logo{font-size:clamp(39px,10vw,58px);letter-spacing:.18em;font-weight:normal;margin:0;text-align:center}
 .logo b{font-weight:normal;color:#b79968}
@@ -62,8 +62,8 @@ linear-gradient(-45deg,transparent 47%,#9b855f33 48% 52%,transparent 53%),
 #1b1b1d;border:1px solid #9b855f}
 .back:before{content:"";position:absolute;inset:6px;border:1px solid #9b855f66}
 .back:after{content:"ZENER";position:absolute;inset:0;display:grid;place-items:center;transform:rotate(90deg);font:700 8px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;letter-spacing:.18em;color:#bca983}
-.front{transform:rotateY(180deg);background:linear-gradient(145deg,#f4efe3,#ded4c2);color:var(--ink);display:grid;place-items:center;border:1px solid #cfc4af}.front>.z{width:58%;height:58%}.front>.z.circle{width:54%;height:54%}.front>.z.square{width:52%;height:52%}.front>.z.star{width:auto;height:auto}.front>.waves{width:70%;height:58%}
-.front:after{content:"";position:absolute;inset:5px;border:1px solid #bcb09c;border-radius:3px;pointer-events:none}.fs{position:absolute;inset:0;display:grid;place-items:center}
+.front{transform:rotateY(180deg);background:linear-gradient(145deg,#f4efe3,#ded4c2);color:#111216;display:flex;align-items:center;justify-content:center;border:1px solid #cfc4af}.front>.z{position:relative;display:block;width:58%;height:58%;z-index:4;flex:none}.front>.z.circle{width:54%;height:54%;border-width:6px}.front>.z.square{width:52%;height:52%;border-width:6px}.front>.z.star{width:auto;height:auto;font-size:54px}.front>.waves{display:block;width:72%;height:58%;z-index:4;flex:none}
+.front:after{content:"";position:absolute;inset:5px;border:1px solid #bcb09c;border-radius:3px;pointer-events:none}
 .z{position:relative;width:56%;height:56%;display:block;z-index:2}
 .z.circle{width:53%;height:53%;border:5px solid currentColor;border-radius:50%}
 .z.square{width:50%;height:50%;border:5px solid currentColor}
@@ -104,7 +104,7 @@ linear-gradient(-45deg,transparent 47%,#9b855f33 48% 52%,transparent 53%),
   <div class="rule"></div>
   <p class="homecopy">Un esperimento con le cinque carte Zener. Morris fissa una previsione prima che tu tocchi una carta.</p>
   <button class="start" id="start">INIZIA IL TEST</button>
-  <div class="smallcap">EXTRA SENSORY PERCEPTION</div>
+  <div class="smallcap">EXTRA SENSORY PERCEPTION · V6</div>
 </section>
 
 <section class="screen" id="game">
@@ -135,12 +135,6 @@ const S=[{id:"circle",n:"Cerchio"},{id:"cross",n:"Croce"},{id:"waves",n:"Onde"},
 let cfg=Object.assign({forced:"star",sound:true,showall:true},JSON.parse(localStorage.getItem(K)||"{}")),phase="idle",deck=[];
 const q=id=>document.getElementById(id),home=q("home"),game=q("game"),cards=q("cards"),pred=q("pred"),inst=q("inst"),sub=q("sub"),reading=q("reading"),rtext=q("rtext"),all=q("all"),again=q("again"),modal=q("modal");
 const save=()=>localStorage.setItem(K,JSON.stringify(cfg));
-async function loadMorrisPhoto(){
-  try{
-    const b64=(await fetch("./morris.b64?v=2",{cache:"no-store"}).then(r=>r.text())).trim();
-    document.documentElement.style.setProperty("--morris-photo",'url("data:image/jpeg;base64,'+b64+'")');
-  }catch(e){}
-}
 function sym(id){if(id==="waves")return '<svg class="waves" viewBox="0 0 100 70"><path d="M5 16 C20 2 30 30 45 16 S70 2 95 16"/><path d="M5 35 C20 21 30 49 45 35 S70 21 95 35"/><path d="M5 54 C20 40 30 68 45 54 S70 40 95 54"/></svg>';if(id==="star")return '<span class="z star">★</span>';return '<span class="z '+id+'"></span>'}
 function screen(x){home.classList.toggle("active",x==="home");game.classList.toggle("active",x==="game")}
 function renderPred(){pred.innerHTML=sym(cfg.forced)}
@@ -156,7 +150,7 @@ q("start").onclick=()=>{reset();screen("game")};q("exit").onclick=()=>{screen("h
 q("sound").onclick=()=>{cfg.sound=!cfg.sound;save();renderSettings()};q("showall").onclick=()=>{cfg.showall=!cfg.showall;save();renderSettings()};
 let t;const begin=e=>{e.preventDefault();clearTimeout(t);t=setTimeout(()=>{renderSettings();modal.classList.add("show");navigator.vibrate&&navigator.vibrate(20)},1200)},end=()=>clearTimeout(t),secret=q("secret");
 secret.addEventListener("touchstart",begin,{passive:false});["touchend","touchcancel"].forEach(x=>secret.addEventListener(x,end));secret.addEventListener("mousedown",begin);["mouseup","mouseleave"].forEach(x=>secret.addEventListener(x,end));secret.addEventListener("contextmenu",e=>e.preventDefault());
-loadMorrisPhoto();renderPred();renderCards();renderSettings();
+renderPred();renderCards();renderSettings();
 if("serviceWorker"in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{})}
 })();
 </script>
