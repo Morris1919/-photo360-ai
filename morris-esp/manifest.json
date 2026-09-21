@@ -1,0 +1,11 @@
+{
+  "name":"Morris ESP",
+  "short_name":"Morris ESP",
+  "description":"Zener card mind-reading experiment with Morris",
+  "start_url":"./",
+  "scope":"./",
+  "display":"standalone",
+  "background_color":"#070a12",
+  "theme_color":"#070a12",
+  "icons":[{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
