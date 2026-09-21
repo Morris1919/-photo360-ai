@@ -2372,3 +2372,233 @@ beginRitualShuffleV16=function(){
   revealNote.textContent="Passa il dito avanti e indietro sul mazzo. Se preferisci, puoi anche toccarlo più volte.";
   oracleText.textContent="Mischialo tu: trascina il dito sul mazzo oppure toccalo più volte.";
 };
+
+
+// ===== MORRIS CARTOMANTE V19: true Night Ritual =====
+let nightBusV19=null,nightTimerV19=null,nightAudioNodesV19=[],nightLastThresholdV19=0;
+
+function ensureNightAtmosphereV19(){
+  let a=document.querySelector("#nightAtmosV19");
+  if(a)return a;
+  a=document.createElement("div");
+  a.id="nightAtmosV19";
+  a.className="night-atmos-v19";
+  a.innerHTML='<div class="night-moon-v19"></div><div class="night-fog-v19 f1"></div><div class="night-fog-v19 f2"></div><div class="night-particles-v19">'+
+    Array.from({length:22},(_,i)=>'<i style="--i:'+i+';--x:'+((i*47)%100)+'%;--d:'+(8+(i%7)*1.7)+'s;--delay:-'+((i*1.31)%9)+'s"></i>').join("")+
+    '</div><div class="night-vignette-v19"></div>';
+  document.body.prepend(a);
+  return a;
+}
+
+function ensureNightVolumeV19(){
+  const toggle=document.querySelector("#nightToggleV17");
+  if(!toggle||document.querySelector("#nightVolumeWrapV19"))return;
+  const label=toggle.closest(".premium-switch-v17");
+  const w=document.createElement("div");
+  w.id="nightVolumeWrapV19";
+  w.className="night-volume-wrap-v19";
+  w.innerHTML='<span>Volume rituale</span><input id="nightVolumeV19" type="range" min="0" max="100" value="58" aria-label="Volume rituale notturno"><b>58</b>';
+  label.insertAdjacentElement("afterend",w);
+  const input=w.querySelector("input"),out=w.querySelector("b");
+  input.addEventListener("input",()=>{
+    out.textContent=input.value;
+    if(nightBusV19&&audioCtx){
+      nightBusV19.gain.cancelScheduledValues(audioCtx.currentTime);
+      nightBusV19.gain.setTargetAtTime(Number(input.value)/100*.12,audioCtx.currentTime,.06);
+    }
+  });
+}
+
+function nightVolumeTargetV19(){
+  const v=Number(document.querySelector("#nightVolumeV19")?.value||58);
+  return Math.max(.0001,v/100*.12);
+}
+
+function startNightAudioV19(){
+  if(!musicEnabled)return;
+  ensureAudio();
+  if(!audioCtx||nightBusV19)return;
+  nightBusV19=audioCtx.createGain();
+  nightBusV19.gain.value=.0001;
+  const filter=audioCtx.createBiquadFilter();
+  filter.type="lowpass";filter.frequency.value=560;filter.Q.value=.9;
+  filter.connect(nightBusV19);nightBusV19.connect(masterGain);
+  [[55,"sine",.34],[82.41,"triangle",.12],[110,"sine",.06]].forEach(([freq,type,gain])=>{
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.type=type;o.frequency.value=freq;g.gain.value=gain;
+    o.connect(g);g.connect(filter);o.start();nightAudioNodesV19.push(o);
+  });
+  const t=audioCtx.currentTime;
+  nightBusV19.gain.exponentialRampToValueAtTime(nightVolumeTargetV19(),t+1.4);
+  const chime=()=>{
+    if(!nightModeV17||!musicEnabled||!audioCtx||!nightBusV19)return;
+    const when=audioCtx.currentTime+.03;
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter();
+    o.type="sine";o.frequency.value=[196,220,261.63,293.66][Math.floor(rnd()*4)];
+    f.type="lowpass";f.frequency.value=1000;
+    g.gain.setValueAtTime(.0001,when);g.gain.exponentialRampToValueAtTime(.045,when+.08);g.gain.exponentialRampToValueAtTime(.0001,when+4.2);
+    o.connect(f);f.connect(g);g.connect(nightBusV19);o.start(when);o.stop(when+4.3);
+  };
+  chime();nightTimerV19=setInterval(chime,6800);
+}
+function stopNightAudioV19(){
+  if(nightTimerV19){clearInterval(nightTimerV19);nightTimerV19=null}
+  if(nightBusV19&&audioCtx){
+    const bus=nightBusV19,t=audioCtx.currentTime;
+    bus.gain.cancelScheduledValues(t);bus.gain.setValueAtTime(Math.max(bus.gain.value,.0001),t);bus.gain.exponentialRampToValueAtTime(.0001,t+.45);
+    setTimeout(()=>{nightAudioNodesV19.forEach(o=>{try{o.stop()}catch(e){}});nightAudioNodesV19=[];try{bus.disconnect()}catch(e){}},520);
+  }
+  nightBusV19=null;
+}
+
+function nightEntranceV19(){
+  document.body.classList.add("night-enter-v19");
+  setTimeout(()=>document.body.classList.remove("night-enter-v19"),1500);
+  const table=document.querySelector(".table");
+  table?.classList.add("night-awaken-v19");
+  setTimeout(()=>table?.classList.remove("night-awaken-v19"),1800);
+}
+
+function setNightRitualV19(on){
+  nightModeV17=on;
+  ensureNightAtmosphereV19();
+  document.body.classList.toggle("night-ritual-v17",on);
+  document.body.classList.toggle("night-ritual-v19",on);
+  if(on){
+    nightEntranceV19();startNightAudioV19();
+    actorSayV3("La stanza cambia. Da qui in poi, ascolta le carte.",2200);
+    oracleText.textContent="Il Rituale Notturno è aperto. La luce resta solo dove serve.";
+    if(navigator.vibrate)navigator.vibrate([25,45,35,70,25]);
+  }else{
+    stopNightAudioV19();
+    actorSayV3("Il rituale si chiude.",1300);
+    oracleText.textContent="Rituale Notturno chiuso. Torniamo alla lettura normale.";
+  }
+}
+
+setTimeout(()=>{
+  ensureNightAtmosphereV19();ensureNightVolumeV19();
+  const t=document.querySelector("#nightToggleV17");
+  if(t&&!t.dataset.v19){
+    t.dataset.v19="1";
+    t.addEventListener("change",e=>setNightRitualV19(e.target.checked));
+  }
+},50);
+
+// Make the shuffle meter feel like ritual energy and add haptic milestones.
+const shuffleProgressV19Base=shuffleProgressV16;
+shuffleProgressV16=function(){
+  shuffleProgressV19Base();
+  const p=Math.max(0,Math.min(100,Math.round(ritualShuffleEnergyV16)));
+  const meter=document.querySelector("#shuffleMeterV16");
+  if(meter&&nightModeV17){
+    meter.classList.add("night-energy-v19");
+    meter.setAttribute("data-label","ENERGIA DEL RITUALE");
+  }
+  if(nightModeV17){
+    const threshold=p>=100?100:p>=75?75:p>=50?50:p>=25?25:0;
+    if(threshold>nightLastThresholdV19){
+      nightLastThresholdV19=threshold;
+      document.querySelector(".table")?.classList.add("night-energy-pulse-v19");
+      setTimeout(()=>document.querySelector(".table")?.classList.remove("night-energy-pulse-v19"),350);
+      if(navigator.vibrate)navigator.vibrate(threshold===100?[40,30,70]:[12,18,12]);
+    }
+  }
+};
+const beginRitualShuffleV19Base=beginRitualShuffleV16;
+beginRitualShuffleV16=function(){
+  nightLastThresholdV19=0;
+  beginRitualShuffleV19Base();
+  if(nightModeV17){
+    revealNote.textContent="Muovi il dito sul mazzo e carica l’energia del rituale.";
+    oracleText.textContent="Non avere fretta. Porta il mazzo fino al 100%.";
+    actorSayV3("Mescola. Io guardo.",1500);
+  }
+};
+const finishRitualShuffleV19Base=finishRitualShuffleV16;
+finishRitualShuffleV16=function(){
+  const was=ritualShuffleActiveV16;
+  finishRitualShuffleV19Base();
+  if(was&&nightModeV17){
+    document.querySelector(".table")?.classList.add("night-shuffle-complete-v19");
+    setTimeout(()=>document.querySelector(".table")?.classList.remove("night-shuffle-complete-v19"),1200);
+    actorSayV3("Il mazzo è carico. Adesso scegli senza pensarci troppo.",2200);
+  }
+};
+
+// Major Arcana get genuinely different night reactions.
+const majorReactionV19Base=majorReactionV17;
+majorReactionV17=function(d){
+  majorReactionV19Base(d);
+  if(!nightModeV17||!d||d.card.arcana!=="Maggiore")return;
+  const id=d.card.id,table=document.querySelector(".table");
+  const effects={
+    torre:"fx-torre-v19",morte:"fx-morte-v19",diavolo:"fx-diavolo-v19",sole:"fx-sole-v19",
+    amanti:"fx-amanti-v19",luna:"fx-luna-v19",stella:"fx-stella-v19",giudizio:"fx-giudizio-v19",
+    mondo:"fx-mondo-v19"
+  };
+  const cls=effects[id]||"fx-major-v19";
+  table?.classList.add(cls);setTimeout(()=>table?.classList.remove(cls),1500);
+  const nightPhrases={
+    torre:"Qui il cielo si spacca. Guarda bene cosa non regge più.",
+    morte:"Questa non sussurra: chiude una forma per aprirne un’altra.",
+    diavolo:"Qui c’è un legame forte. La domanda è: chi tiene chi?",
+    sole:"La stanza si apre. Qui c’è qualcosa che può diventare finalmente chiaro.",
+    amanti:"Non è solo sentimento. Qui una scelta pesa davvero.",
+    luna:"Cammina piano. Questa carta nasconde più di quanto mostra.",
+    stella:"Qui entra aria. Non sprecarla con la fretta.",
+    giudizio:"Questa carta non chiede attesa. Chiede una risposta.",
+    mondo:"Qui un cerchio si chiude. Guarda cosa hai finalmente completato."
+  };
+  actorSayV3(nightPhrases[id]||("Questo Arcano cambia il peso della stesa: "+d.card.name+"."),2600);
+};
+
+// Secret question gets an actual visual seal.
+function showSecretSealV19(){
+  if(!secretModeV17)return;
+  let seal=document.querySelector("#secretSealV19");
+  if(!seal){
+    seal=document.createElement("div");seal.id="secretSealV19";seal.className="secret-seal-v19";
+    seal.innerHTML='<span>☾</span><b>DOMANDA CUSTODITA</b><small>Si riaprirà insieme al responso</small>';
+    q.closest(".question-label")?.appendChild(seal);
+  }
+  requestAnimationFrame(()=>seal.classList.add("active"));
+}
+function hideSecretSealV19(){
+  const s=document.querySelector("#secretSealV19");if(!s)return;
+  s.classList.remove("active");setTimeout(()=>s.remove(),550);
+}
+drawBtn.addEventListener("click",()=>{
+  if(secretModeV17)setTimeout(showSecretSealV19,30);
+},true);
+
+// Upgrade the final result in Night mode.
+const renderResultV19Base=renderResult;
+renderResult=function(){
+  renderResultV19Base();
+  hideSecretSealV19();
+  if(!nightModeV17)return;
+  const trend=localTrendV10();
+  const title=trend.band==="positive"?"UNA PORTA SI APRE":trend.band==="negative"?"IL NODO RESTA ATTIVO":"IL QUADRO È IN MOVIMENTO";
+  const sub=trend.band==="positive"
+    ?"Le carte non eliminano le condizioni, ma la direzione complessiva è favorevole."
+    :trend.band==="negative"
+    ?"La stesa chiede prudenza: il blocco non sembra solo momentaneo."
+    :"Le carte non danno un sì o un no pulito: mostrano una transizione da leggere con attenzione.";
+  const box=document.createElement("div");
+  box.className="night-verdict-v19";
+  box.innerHTML='<span>Verdetto della notte</span><h3>'+title+'</h3><p>'+sub+'</p>';
+  result.insertBefore(box,result.firstChild);
+  result.classList.add("night-result-v19");
+  actorSayV3("Il responso è aperto. Adesso rileggi la tua domanda.",2400);
+  if(navigator.vibrate)navigator.vibrate([18,24,18,55,30]);
+};
+
+// Keep night audio coherent if the global music button is toggled.
+const setMusicV19Base=setMusic;
+setMusic=function(on){
+  setMusicV19Base(on);
+  if(nightModeV17){
+    if(on)startNightAudioV19();else stopNightAudioV19();
+  }
+};
