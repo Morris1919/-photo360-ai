@@ -18,6 +18,8 @@
   let selected=null;
   let audioCtx=null;
   let pressTimer=null;
+  let timers=[];
+  function later(fn,ms){ timers.push(window.setTimeout(fn,ms)); }
 
   const $=id=>document.getElementById(id);
   const home=$("home"),game=$("game"),cards=$("cards"),predCard=$("predCard"),reading=$("reading"),modal=$("modal");
@@ -27,7 +29,7 @@
   function save(){ try{ localStorage.setItem(KEY,JSON.stringify(settings)); }catch(e){} }
   function symbolName(id){ return (SYMBOLS.find(s=>s.id===id)||{}).name||id; }
   function symbolHTML(id){
-    const common='viewBox="0 0 100 100" class="zener" aria-hidden="true"';
+    const common='viewBox="8 8 84 84" class="zener" aria-hidden="true"';
     if(id==="circle") return `<svg ${common}><circle cx="50" cy="50" r="29" fill="none" stroke="currentColor" stroke-width="8"/></svg>`;
     if(id==="cross") return `<svg ${common}><path d="M46 18h8v28h28v8H54v28h-8V54H18v-8h28z" fill="currentColor"/></svg>`;
     if(id==="waves") return `<svg ${common}><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"><path d="M12 28c12-14 24 14 38 0s26 14 38 0"/><path d="M12 50c12-14 24 14 38 0s26 14 38 0"/><path d="M12 72c12-14 24 14 38 0s26 14 38 0"/></g></svg>`;
@@ -37,6 +39,8 @@
 
   function showScreen(which){
     home.classList.toggle("active",which==="home");
+    home.inert=which!=="home";
+    game.inert=which!=="game";
     game.classList.toggle("active",which==="game");
   }
   function setPrompt(main,sub){ promptMain.textContent=main; promptSub.textContent=sub; }
@@ -79,6 +83,7 @@
     const card=cards.children[index];
     if(!card) return;
     card.innerHTML=frontMarkup(deck[index]);
+    card.classList.add("revealed");
     card.setAttribute("aria-label","Carta "+(index+1)+": "+symbolName(deck[index]));
   }
   function primeAudio(){
@@ -107,6 +112,7 @@
     }catch(e){}
   }
   function reset(){
+    timers.forEach(clearTimeout); timers=[];
     state="idle"; deck=[]; selected=null;
     reading.classList.remove("show"); reading.setAttribute("aria-hidden","true");
     setPrompt("Scegli una carta","La posizione è completamente libera.");
@@ -128,8 +134,8 @@
     setPrompt("Scelta registrata","Morris si sta concentrando sulla tua carta.");
     $("readTitle").textContent="Morris si concentra...";
     reading.classList.add("show"); reading.setAttribute("aria-hidden","false");
-    window.setTimeout(()=>{ if(state==="reading") $("readTitle").textContent="Sta percependo il simbolo..."; },720);
-    window.setTimeout(()=>{
+    later(()=>{ if(state==="reading") $("readTitle").textContent="Sta percependo il simbolo..."; },720);
+    later(()=>{
       if(state!=="reading") return;
       reading.classList.remove("show"); reading.setAttribute("aria-hidden","true");
       revealCard(index);
@@ -145,7 +151,7 @@
     if(state!=="revealed" && state!=="all") return;
     [...cards.children].forEach((card,i)=>{
       if(i===selected) return;
-      window.setTimeout(()=>revealCard(i),110*(i+1));
+      later(()=>revealCard(i),110*(i+1));
     });
     state="all";
     showAllBtn.classList.add("hidden");
@@ -175,11 +181,12 @@
   }
   function openSecret(){
     renderSettings();
+    home.inert=true;
     modal.classList.add("show");
     modal.setAttribute("aria-hidden","false");
     try{ if(navigator.vibrate) navigator.vibrate(20); }catch(e){}
   }
-  function closeSecret(){ modal.classList.remove("show"); modal.setAttribute("aria-hidden","true"); }
+  function closeSecret(){ home.inert=false; modal.classList.remove("show"); modal.setAttribute("aria-hidden","true"); }
 
   $("startBtn").addEventListener("click",()=>{ reset(); showScreen("game"); });
   $("exitBtn").addEventListener("click",()=>{ closeSecret(); reset(); showScreen("home"); });
@@ -208,13 +215,9 @@
     caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))).catch(()=>{});
   }
 
+  showScreen("home");
   renderPrediction();
   renderCards();
   renderSettings();
 
-  window.__MORRIS_ESP_TEST__={
-    getState:()=>({state,deck:deck.slice(),selected,settings:Object.assign({},settings)}),
-    setForced:id=>{ if(SYMBOLS.some(s=>s.id===id)){settings.forced=id;save();renderPrediction();renderSettings();return true;}return false; },
-    reset
-  };
 })();

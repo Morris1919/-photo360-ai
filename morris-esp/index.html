@@ -10,14 +10,15 @@
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
 <meta http-equiv="Pragma" content="no-cache">
 <title>Morris ESP</title>
-<link rel="manifest" href="./manifest.json?v=20260921-final">
-<link rel="stylesheet" href="./style.css?v=20260921-final">
+<link rel="icon" href="./icon.svg">
+<link rel="manifest" href="./manifest.json?v=20260922-r2">
+<link rel="stylesheet" href="./style.css?v=20260922-r2">
 </head>
 <body>
-<div class="app">
+<div class="app" data-version="20260922-r2">
   <section class="screen active" id="home">
     <div class="portrait-wrap" id="secretHotspot" aria-label="Morris">
-      <img class="morris-photo" src="./morris.jpg?v=20260921-final" alt="Morris">
+      <img class="morris-photo" src="./morris.jpg?v=20260922-r2" alt="Morris">
     </div>
     <div class="home-kicker">Esperimento Zener</div>
     <h1 class="brand">MORRIS <em>ESP</em></h1>
@@ -30,7 +31,7 @@
   <section class="screen" id="game">
     <div class="topbar"><div class="mini-brand">MORRIS <em>ESP</em></div><div class="session">Test Zener</div></div>
     <div class="morris-strip">
-      <img class="morris-small" src="./morris.jpg?v=20260921-final" alt="Morris">
+      <img class="morris-small" src="./morris.jpg?v=20260922-r2" alt="Morris">
       <div><div class="strip-kicker">Percezione attiva</div><div class="strip-title">Morris ha già fissato la sua previsione.</div></div>
     </div>
 
@@ -43,7 +44,7 @@
       <div class="pred-card" id="predCard" aria-label="Previsione di Morris"></div>
     </div>
 
-    <div class="prompt"><div class="prompt-main" id="promptMain">Scegli una carta</div><div class="prompt-sub" id="promptSub">La posizione è completamente libera.</div></div>
+    <div class="prompt" aria-live="polite"><div class="prompt-main" id="promptMain">Scegli una carta</div><div class="prompt-sub" id="promptSub">La posizione è completamente libera.</div></div>
     <div class="cards" id="cards"></div>
 
     <div class="actions">
@@ -55,13 +56,13 @@
 
   <div class="reading" id="reading" aria-hidden="true">
     <div class="readbox">
-      <div class="read-orbit"><img class="read-photo" src="./morris.jpg?v=20260921-final" alt="Morris"></div>
+      <div class="read-orbit"><img class="read-photo" src="./morris.jpg?v=20260922-r2" alt="Morris"></div>
       <div class="read-title" id="readTitle">Morris si concentra...</div>
       <div class="read-sub">Non cambiare scelta.</div>
     </div>
   </div>
 
-  <div class="modal" id="modal" aria-hidden="true">
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Controllo segreto" aria-hidden="true">
     <div class="sheet">
       <div class="sheethead"><div class="sheettitle">Controllo segreto</div><button class="close" id="closeBtn" type="button" aria-label="Chiudi">×</button></div>
       <div class="label">SIMBOLO DA FORZARE</div>
@@ -72,6 +73,6 @@
     </div>
   </div>
 </div>
-<script src="./app.js?v=20260921-final"></script>
+<script src="./app.js?v=20260922-r2"></script>
 </body>
 </html>
