@@ -62,7 +62,7 @@ linear-gradient(-45deg,transparent 47%,#9b855f33 48% 52%,transparent 53%),
 #1b1b1d;border:1px solid #9b855f}
 .back:before{content:"";position:absolute;inset:6px;border:1px solid #9b855f66}
 .back:after{content:"ZENER";position:absolute;inset:0;display:grid;place-items:center;transform:rotate(90deg);font:700 8px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;letter-spacing:.18em;color:#bca983}
-.front{transform:rotateY(180deg);background:linear-gradient(145deg,#f4efe3,#ded4c2);color:var(--ink);display:grid;place-items:center;border:1px solid #cfc4af}
+.front{transform:rotateY(180deg);background:linear-gradient(145deg,#f4efe3,#ded4c2);color:var(--ink);display:grid;place-items:center;border:1px solid #cfc4af}.front>.z{width:58%;height:58%}.front>.z.circle{width:54%;height:54%}.front>.z.square{width:52%;height:52%}.front>.z.star{width:auto;height:auto}.front>.waves{width:70%;height:58%}
 .front:after{content:"";position:absolute;inset:5px;border:1px solid #bcb09c;border-radius:3px;pointer-events:none}.fs{position:absolute;inset:0;display:grid;place-items:center}
 .z{position:relative;width:56%;height:56%;display:block;z-index:2}
 .z.circle{width:53%;height:53%;border:5px solid currentColor;border-radius:50%}
@@ -144,9 +144,9 @@ async function loadMorrisPhoto(){
 function sym(id){if(id==="waves")return '<svg class="waves" viewBox="0 0 100 70"><path d="M5 16 C20 2 30 30 45 16 S70 2 95 16"/><path d="M5 35 C20 21 30 49 45 35 S70 21 95 35"/><path d="M5 54 C20 40 30 68 45 54 S70 40 95 54"/></svg>';if(id==="star")return '<span class="z star">★</span>';return '<span class="z '+id+'"></span>'}
 function screen(x){home.classList.toggle("active",x==="home");game.classList.toggle("active",x==="game")}
 function renderPred(){pred.innerHTML=sym(cfg.forced)}
-function renderCards(){cards.innerHTML="";for(let i=0;i<5;i++){const b=document.createElement("button");b.className="card";b.innerHTML='<span class="inner"><span class="face back"></span><span class="face front"><span class="fs"></span></span></span>';b.onclick=()=>choose(i);cards.appendChild(b)}}
+function renderCards(){cards.innerHTML="";for(let i=0;i<5;i++){const b=document.createElement("button");b.className="card";b.innerHTML='<span class="inner"><span class="face back"></span><span class="face front"></span></span>';b.onclick=()=>choose(i);cards.appendChild(b)}}
 function shuffle(a){a=a.slice();for(let i=a.length-1;i;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function assign(idx){let rest=shuffle(S.map(x=>x.id).filter(x=>x!==cfg.forced));deck=Array(5).fill(null);deck[idx]=cfg.forced;let p=0;for(let i=0;i<5;i++)if(i!==idx)deck[i]=rest[p++];[...cards.children].forEach((c,i)=>c.querySelector(".fs").innerHTML=sym(deck[i]))}
+function assign(idx){let rest=shuffle(S.map(x=>x.id).filter(x=>x!==cfg.forced));deck=Array(5).fill(null);deck[idx]=cfg.forced;let p=0;for(let i=0;i<5;i++)if(i!==idx)deck[i]=rest[p++];[...cards.children].forEach((c,i)=>{const f=c.querySelector(".front");f.innerHTML=sym(deck[i])})}
 function tone(){if(!cfg.sound)return;try{const A=window.AudioContext||window.webkitAudioContext,c=new A(),o=c.createOscillator(),g=c.createGain();o.type="sine";o.frequency.setValueAtTime(420,c.currentTime);o.frequency.exponentialRampToValueAtTime(760,c.currentTime+.35);g.gain.setValueAtTime(.0001,c.currentTime);g.gain.exponentialRampToValueAtTime(.05,c.currentTime+.03);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.55);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.58);setTimeout(()=>c.close(),700)}catch(e){}}
 function choose(idx){if(phase!=="idle")return;phase="reading";assign(idx);[...cards.children].forEach((c,i)=>{c.disabled=true;c.classList.toggle("selected",i===idx)});inst.textContent="Scelta registrata";sub.textContent="Concentrati sulla carta scelta.";reading.classList.add("show");rtext.textContent="Concentrati sulla carta.";setTimeout(()=>rtext.textContent="Confronto con la previsione…",800);setTimeout(()=>{reading.classList.remove("show");cards.children[idx].classList.add("flip");tone();navigator.vibrate&&navigator.vibrate(30);phase="revealed";inst.textContent="Coincide.";sub.textContent="La carta scelta coincide con la previsione.";if(cfg.showall)all.classList.remove("hidden");again.classList.remove("hidden")},1900)}
 function revealAll(){if(phase!=="revealed"&&phase!=="all")return;[...cards.children].forEach((c,i)=>setTimeout(()=>{c.classList.add("flip");c.disabled=true},i*100));phase="all";all.classList.add("hidden");inst.textContent="Tutte diverse.";sub.textContent="Le cinque carte contengono cinque simboli diversi."}
@@ -156,7 +156,7 @@ q("start").onclick=()=>{reset();screen("game")};q("exit").onclick=()=>{screen("h
 q("sound").onclick=()=>{cfg.sound=!cfg.sound;save();renderSettings()};q("showall").onclick=()=>{cfg.showall=!cfg.showall;save();renderSettings()};
 let t;const begin=e=>{e.preventDefault();clearTimeout(t);t=setTimeout(()=>{renderSettings();modal.classList.add("show");navigator.vibrate&&navigator.vibrate(20)},1200)},end=()=>clearTimeout(t),secret=q("secret");
 secret.addEventListener("touchstart",begin,{passive:false});["touchend","touchcancel"].forEach(x=>secret.addEventListener(x,end));secret.addEventListener("mousedown",begin);["mouseup","mouseleave"].forEach(x=>secret.addEventListener(x,end));secret.addEventListener("contextmenu",e=>e.preventDefault());
-renderPred();renderCards();renderSettings();
+loadMorrisPhoto();renderPred();renderCards();renderSettings();
 if("serviceWorker"in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{})}
 })();
 </script>
