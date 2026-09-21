@@ -18,6 +18,7 @@
   let selected=null;
   let audioCtx=null;
   let pressTimer=null;
+  let manualOverride=false;
   let timers=[];
   function later(fn,ms){ timers.push(window.setTimeout(fn,ms)); }
 
@@ -111,6 +112,19 @@
       o.connect(g);g.connect(audioCtx.destination);o.start(now);o.stop(now+.58);
     }catch(e){}
   }
+  function chooseRandomPrediction(){
+    const pool=SYMBOLS.map(s=>s.id).filter(id=>id!==settings.forced);
+    settings.forced=pool[Math.floor(Math.random()*pool.length)];
+    save();
+  }
+  function beginNewTest(){
+    if(manualOverride){
+      manualOverride=false;
+    }else{
+      chooseRandomPrediction();
+    }
+    reset();
+  }
   function reset(){
     timers.forEach(clearTimeout); timers=[];
     state="idle"; deck=[]; selected=null;
@@ -168,6 +182,7 @@
       b.innerHTML=symbolHTML(s.id);
       b.addEventListener("click",()=>{
         settings.forced=s.id;
+        manualOverride=true;
         save();
         renderSettings();
         renderPrediction();
@@ -188,9 +203,9 @@
   }
   function closeSecret(){ home.inert=false; modal.classList.remove("show"); modal.setAttribute("aria-hidden","true"); }
 
-  $("startBtn").addEventListener("click",()=>{ reset(); showScreen("game"); });
+  $("startBtn").addEventListener("click",()=>{ beginNewTest(); showScreen("game"); });
   $("exitBtn").addEventListener("click",()=>{ closeSecret(); reset(); showScreen("home"); });
-  againBtn.addEventListener("click",reset);
+  againBtn.addEventListener("click",beginNewTest);
   showAllBtn.addEventListener("click",revealAll);
   $("closeBtn").addEventListener("click",closeSecret);
   modal.addEventListener("click",e=>{ if(e.target===modal) closeSecret(); });
