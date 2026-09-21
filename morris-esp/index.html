@@ -25,7 +25,7 @@ radial-gradient(circle at 30% 20%,#fff2 0 1px,transparent 1.5px);background-size
 .screen{position:absolute;inset:0;padding:max(22px,env(safe-area-inset-top)) 18px max(18px,env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;opacity:0;pointer-events:none;transition:.28s ease}
 .screen.active{opacity:1;pointer-events:auto}
 #home{justify-content:center}
-.seal{width:112px;height:112px;border:1px solid #8f7a5d;border-radius:50%;display:grid;place-items:center;position:relative;margin-bottom:22px;box-shadow:0 0 0 6px #ffffff08,0 24px 60px #0008}
+.seal{width:154px;height:154px;border:1px solid #8f7a5d;border-radius:50%;position:relative;margin-bottom:22px;box-shadow:0 0 0 6px #ffffff08,0 24px 60px #0008;overflow:hidden;background:#191715}
 .seal:before,.seal:after{content:"";position:absolute;border-radius:50%}.seal:before{inset:9px;border:1px solid #8f7a5d66}.seal:after{width:10px;height:10px;background:#8b2e2c;bottom:10px}
 .dogmark{width:74px;height:74px;opacity:.95}
 .logo{font-size:clamp(39px,10vw,58px);letter-spacing:.18em;font-weight:normal;margin:0;text-align:center}
@@ -48,7 +48,7 @@ radial-gradient(circle at 30% 20%,#fff2 0 1px,transparent 1.5px);background-size
 .prompt{width:min(100%,500px);text-align:center;margin:20px 0 13px}
 .prompt .main{font-size:21px;margin-bottom:7px}
 .prompt .sub{font:12px/1.3 -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;color:#797771}
-.cards{width:min(100%,500px);display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:auto auto;gap:12px 10px;perspective:1200px;padding:0 8px}
+.cards{width:min(100%,520px);display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:auto auto;gap:11px 9px;perspective:1200px;padding:0 3px}
 .card{position:relative;aspect-ratio:.69;border:0;background:none;padding:0;perspective:800px}
 .card:nth-child(1){grid-column:1/3}.card:nth-child(2){grid-column:3/5}.card:nth-child(3){grid-column:5/7}.card:nth-child(4){grid-column:2/4}.card:nth-child(5){grid-column:4/6}
 .inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .72s cubic-bezier(.2,.78,.22,1),filter .25s}
@@ -96,12 +96,7 @@ linear-gradient(-45deg,transparent 47%,#9b855f33 48% 52%,transparent 53%),
 <div class="app">
 <section class="screen active" id="home">
   <div class="seal">
-    <svg class="dogmark" viewBox="0 0 100 100" aria-label="Morris">
-      <path d="M25 33 C13 23 9 39 18 56 C20 63 26 66 31 63 C26 77 36 87 50 87 C64 87 74 77 69 63 C74 66 80 63 82 56 C91 39 87 23 75 33 C68 20 32 20 25 33Z" fill="#e8e2d6"/>
-      <ellipse cx="39" cy="48" rx="4.5" ry="6" fill="#111216"/><ellipse cx="61" cy="48" rx="4.5" ry="6" fill="#111216"/>
-      <ellipse cx="50" cy="59" rx="6.5" ry="4.5" fill="#111216"/><path d="M42 67 Q50 73 58 67" fill="none" stroke="#111216" stroke-width="2.2" stroke-linecap="round"/>
-      <path d="M18 37 Q10 29 15 23 Q25 18 31 32" fill="#cdbb99"/><path d="M82 37 Q90 29 85 23 Q75 18 69 32" fill="#cdbb99"/>
-    </svg>
+    <div class="morris-photo" aria-label="Morris"></div>
     <div class="secret-hotspot" id="secret"></div>
   </div>
   <h1 class="logo">MORRIS <b>ESP</b></h1>
@@ -122,7 +117,7 @@ linear-gradient(-45deg,transparent 47%,#9b855f33 48% 52%,transparent 53%),
   <div class="actions"><button class="secondary hidden" id="all">MOSTRA TUTTE</button><button class="secondary hidden" id="again">RIPETI</button><button class="ghost" id="exit">ESCI</button></div>
 </section>
 
-<div class="reading" id="reading"><div><div class="scan"><div class="paw">●</div></div><div class="rtxt" id="rtext">Concentrati sulla carta.</div><div class="rsub">Morris sta confrontando la tua scelta con la previsione.</div></div></div>
+<div class="reading" id="reading"><div><div class="scan"><div class="morris-photo" style="position:relative;width:116px;height:116px;inset:auto"></div></div><div class="rtxt" id="rtext">Concentrati sulla carta.</div><div class="rsub">Morris sta confrontando la tua scelta con la previsione.</div></div></div>
 
 <div class="modal" id="modal"><div class="sheet">
   <div class="sh"><div class="st">Controllo segreto</div><button class="close" id="close">×</button></div>
@@ -147,15 +142,15 @@ function shuffle(a){a=a.slice();for(let i=a.length-1;i;i--){let j=Math.floor(Mat
 function assign(idx){let rest=shuffle(S.map(x=>x.id).filter(x=>x!==cfg.forced));deck=Array(5).fill(null);deck[idx]=cfg.forced;let p=0;for(let i=0;i<5;i++)if(i!==idx)deck[i]=rest[p++];[...cards.children].forEach((c,i)=>c.querySelector(".fs").innerHTML=sym(deck[i]))}
 function tone(){if(!cfg.sound)return;try{const A=window.AudioContext||window.webkitAudioContext,c=new A(),o=c.createOscillator(),g=c.createGain();o.type="sine";o.frequency.setValueAtTime(420,c.currentTime);o.frequency.exponentialRampToValueAtTime(760,c.currentTime+.35);g.gain.setValueAtTime(.0001,c.currentTime);g.gain.exponentialRampToValueAtTime(.05,c.currentTime+.03);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.55);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.58);setTimeout(()=>c.close(),700)}catch(e){}}
 function choose(idx){if(phase!=="idle")return;phase="reading";assign(idx);[...cards.children].forEach((c,i)=>{c.disabled=true;c.classList.toggle("selected",i===idx)});inst.textContent="Scelta registrata";sub.textContent="Non toccare altro.";reading.classList.add("show");rtext.textContent="Concentrati sulla carta.";setTimeout(()=>rtext.textContent="Confronto con la previsione…",800);setTimeout(()=>{reading.classList.remove("show");cards.children[idx].classList.add("flip");tone();navigator.vibrate&&navigator.vibrate(30);phase="revealed";inst.textContent="Coincide.";sub.textContent="La carta scelta era già nella previsione di Morris.";if(cfg.showall)all.classList.remove("hidden");again.classList.remove("hidden")},1900)}
-function revealAll(){[...cards.children].forEach((c,i)=>setTimeout(()=>c.classList.add("flip"),i*90));phase="all";all.classList.add("hidden");inst.textContent="Tutte diverse.";sub.textContent="Cinque simboli, una sola corrispondenza."}
-function reset(){phase="idle";deck=[];inst.textContent="Tocca una carta";sub.textContent="Una qualsiasi. Non puoi sbagliare.";all.classList.add("hidden");again.classList.add("hidden");renderPred();renderCards()}
+function revealAll(){if(phase!=="revealed"&&phase!=="all")return;[...cards.children].forEach((c,i)=>setTimeout(()=>{c.classList.add("flip");c.disabled=true},i*100));phase="all";all.classList.add("hidden");inst.textContent="Tutte diverse.";sub.textContent="Cinque simboli, una sola corrispondenza."}
+function reset(){phase="idle";deck=[];reading.classList.remove("show");inst.textContent="Tocca una carta";sub.textContent="Una qualsiasi. Non puoi sbagliare.";all.classList.add("hidden");again.classList.add("hidden");renderPred();renderCards()}
 function renderSettings(){const p=q("picker");p.innerHTML="";S.forEach(s=>{const b=document.createElement("button");b.className="pick"+(cfg.forced===s.id?" active":"");b.innerHTML=sym(s.id);b.title=s.n;b.onclick=()=>{cfg.forced=s.id;save();renderSettings();renderPred()};p.appendChild(b)});q("sound").classList.toggle("on",cfg.sound);q("showall").classList.toggle("on",cfg.showall)}
 q("start").onclick=()=>{reset();screen("game")};q("exit").onclick=()=>{screen("home");reset()};again.onclick=reset;all.onclick=revealAll;q("close").onclick=()=>modal.classList.remove("show");modal.onclick=e=>{if(e.target===modal)modal.classList.remove("show")};
 q("sound").onclick=()=>{cfg.sound=!cfg.sound;save();renderSettings()};q("showall").onclick=()=>{cfg.showall=!cfg.showall;save();renderSettings()};
 let t;const begin=e=>{e.preventDefault();clearTimeout(t);t=setTimeout(()=>{renderSettings();modal.classList.add("show");navigator.vibrate&&navigator.vibrate(20)},1200)},end=()=>clearTimeout(t),secret=q("secret");
 secret.addEventListener("touchstart",begin,{passive:false});["touchend","touchcancel"].forEach(x=>secret.addEventListener(x,end));secret.addEventListener("mousedown",begin);["mouseup","mouseleave"].forEach(x=>secret.addEventListener(x,end));secret.addEventListener("contextmenu",e=>e.preventDefault());
 renderPred();renderCards();renderSettings();
-if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js?v=3").catch(()=>{}));
+if("serviceWorker"in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{})}
 })();
 </script>
 </body></html>
