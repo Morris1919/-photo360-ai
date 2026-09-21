@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#050505">
+<title>Card Force</title>
+<style>
+:root{--bg:#050505;--panel:#121212;--text:#f4f4f4;--muted:#9b9b9b;--accent:#d8b25e}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);touch-action:none;user-select:none}
+#stage{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 50% 42%,#1d1d1d 0,#090909 50%,#020202 100%)}
+.card{position:relative;width:min(78vw,420px);aspect-ratio:2.5/3.5;background:#fff;border-radius:22px;box-shadow:0 24px 70px rgba(0,0,0,.55),inset 0 0 0 2px rgba(0,0,0,.08);transform:translateZ(0);overflow:hidden;color:#111}
+.card.red{color:#c62026}
+.corner{position:absolute;top:18px;left:20px;display:flex;flex-direction:column;align-items:center;line-height:.88;font-family:Georgia,serif;font-weight:700;font-size:clamp(34px,9vw,58px)}
+.corner.bottom{top:auto;left:auto;right:20px;bottom:18px;transform:rotate(180deg)}
+.center{position:absolute;inset:0;display:grid;place-items:center;font-size:clamp(120px,42vw,250px);font-family:Georgia,serif}
+.faceRank{position:absolute;inset:0;display:grid;place-items:center;font-family:Georgia,serif;font-weight:800;font-size:clamp(140px,48vw,285px);letter-spacing:-.06em}
+.hiddenHotspot{position:fixed;top:0;left:0;width:86px;height:86px;z-index:30}
+#setup{position:fixed;inset:0;z-index:40;background:linear-gradient(180deg,#080808,#141414);display:flex;flex-direction:column;padding:max(22px,env(safe-area-inset-top)) 18px max(22px,env(safe-area-inset-bottom));overflow:auto}
+#setup.hidden{display:none}
+h1{font-size:24px;margin:4px 0 6px}
+.sub{font-size:14px;color:var(--muted);margin:0 0 16px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.pick{border:1px solid #333;background:#181818;color:#fff;border-radius:12px;padding:12px 5px;font-size:18px;font-weight:700;min-height:52px}
+.pick.red{color:#ff5a61}
+.pick.selected{outline:2px solid var(--accent);background:#282313}
+.actions{display:flex;gap:10px;margin-top:18px;position:sticky;bottom:0;padding-top:10px;background:linear-gradient(transparent,#141414 28%)}
+button.primary,button.secondary{border:0;border-radius:14px;padding:15px 18px;font-size:16px;font-weight:800;flex:1}
+button.primary{background:#f2f2f2;color:#050505}
+button.secondary{background:#252525;color:#fff}
+#hint{position:fixed;bottom:max(18px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);font-size:12px;color:rgba(255,255,255,.25);z-index:10;opacity:0;transition:opacity .25s}
+#hint.show{opacity:1}
+.flash{animation:land .32s cubic-bezier(.2,.9,.2,1)}
+@keyframes land{0%{transform:scale(.94) rotate(-1deg);filter:blur(2px)}70%{transform:scale(1.018) rotate(.2deg);filter:blur(0)}100%{transform:scale(1)}}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="card" class="card">
+    <div class="corner"><span id="r1">A</span><span id="s1">♠</span></div>
+    <div id="center" class="center">♠</div>
+    <div class="corner bottom"><span id="r2">A</span><span id="s2">♠</span></div>
+  </div>
+</div>
+<div class="hiddenHotspot" id="hotspot" aria-hidden="true"></div>
+<div id="hint">tocca per ripartire</div>
+
+<section id="setup">
+  <h1>Carta da forzare</h1>
+  <p class="sub">Scegli la carta. Poi avvia la modalità performance.</p>
+  <div class="grid" id="grid"></div>
+  <div class="actions">
+    <button class="secondary" id="randomBtn">Casuale</button>
+    <button class="primary" id="startBtn">INIZIA</button>
+  </div>
+</section>
+
+<script>
+const suits=[{s:'♠',name:'Picche',red:false},{s:'♥',name:'Cuori',red:true},{s:'♦',name:'Quadri',red:true},{s:'♣',name:'Fiori',red:false}];
+const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const deck=suits.flatMap(su=>ranks.map(r=>({r,s:su.s,name:r+' di '+su.name,red:su.red})));
+let forced=JSON.parse(localStorage.getItem('forcedCard')||'null')||deck[0];
+let running=false, timer=null, longTimer=null, longTriggered=false, lastKey='';
+const cardEl=document.getElementById('card'),setup=document.getElementById('setup'),hint=document.getElementById('hint');
+const r1=document.getElementById('r1'),r2=document.getElementById('r2'),s1=document.getElementById('s1'),s2=document.getElementById('s2'),center=document.getElementById('center');
+
+function key(c){return c.r+c.s}
+function show(c,landing=false){
+  cardEl.classList.toggle('red',c.red);
+  r1.textContent=r2.textContent=c.r;s1.textContent=s2.textContent=center.textContent=c.s;
+  if(landing){cardEl.classList.remove('flash');void cardEl.offsetWidth;cardEl.classList.add('flash')}
+}
+function randomCard(excludeForced=false){
+  let c;
+  do{c=deck[Math.floor(Math.random()*deck.length)]}while((key(c)===lastKey)||(excludeForced&&key(c)===key(forced)));
+  lastKey=key(c);return c;
+}
+function schedule(){
+  if(!running)return;
+  show(randomCard(false));
+  timer=setTimeout(schedule,55+Math.random()*35);
+}
+function startRun(){
+  clearTimeout(timer);running=true;hint.classList.remove('show');schedule();
+}
+function stopOnForce(){
+  if(!running)return;
+  running=false;clearTimeout(timer);
+  const seq=[120,135,155,185];
+  let i=0;
+  function ease(){
+    if(i<seq.length){
+      show(randomCard(true));timer=setTimeout(ease,seq[i++]);
+    }else{
+      show(forced,true);
+      if(navigator.vibrate)navigator.vibrate(18);
+      setTimeout(()=>hint.classList.add('show'),650);
+    }
+  }
+  ease();
+}
+function renderGrid(){
+  const g=document.getElementById('grid');g.innerHTML='';
+  deck.forEach(c=>{
+    const b=document.createElement('button');
+    b.className='pick'+(c.red?' red':'')+(key(c)===key(forced)?' selected':'');
+    b.textContent=c.r+' '+c.s;
+    b.onclick=()=>{forced=c;localStorage.setItem('forcedCard',JSON.stringify(forced));renderGrid();show(forced)};
+    g.appendChild(b);
+  });
+}
+function openSetup(){
+  running=false;clearTimeout(timer);hint.classList.remove('show');setup.classList.remove('hidden');renderGrid();show(forced);
+}
+function closeSetup(){setup.classList.add('hidden');startRun()}
+
+renderGrid();show(forced);
+document.getElementById('startBtn').onclick=closeSetup;
+document.getElementById('randomBtn').onclick=()=>{forced=deck[Math.floor(Math.random()*deck.length)];localStorage.setItem('forcedCard',JSON.stringify(forced));renderGrid();show(forced)};
+
+const hotspot=document.getElementById('hotspot');
+hotspot.addEventListener('pointerdown',e=>{e.preventDefault();longTriggered=false;clearTimeout(longTimer);longTimer=setTimeout(()=>{longTriggered=true;openSetup();},1800)});
+hotspot.addEventListener('pointerup',e=>{e.preventDefault();clearTimeout(longTimer);});
+hotspot.addEventListener('pointercancel',()=>clearTimeout(longTimer));
+
+document.getElementById('stage').addEventListener('pointerup',e=>{
+  if(!setup.classList.contains('hidden'))return;
+  if(longTriggered)return;
+  if(running)stopOnForce();else startRun();
+});
+
+document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(timer)}else if(running){schedule()}});
+</script>
+</body>
+</html>
