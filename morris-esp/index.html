@@ -138,7 +138,7 @@ linear-gradient(145deg,#28192f,#15101b);border:1px solid rgba(199,166,106,.7);bo
 <div class="app">
   <section class="screen active" id="home">
     <div class="orbit">
-      <img class="morris-main" data-morris alt="Morris">
+      <img class="morris-main" src="./morris.jpg?v=13" alt="Morris">
       <div class="secret-hotspot" id="secretHotspot"></div>
     </div>
     <div class="home-kicker">Esperimento Zener</div>
@@ -153,7 +153,7 @@ linear-gradient(145deg,#28192f,#15101b);border:1px solid rgba(199,166,106,.7);bo
     <div class="topbar"><div class="mini-brand">MORRIS <span>ESP</span></div><div class="session">Test Zener</div></div>
 
     <div class="morris-strip">
-      <img class="morris-small" data-morris alt="Morris">
+      <img class="morris-small" src="./morris.jpg?v=13" alt="Morris">
       <div><div class="strip-kicker">Percezione attiva</div><div class="strip-title">Morris ha già fissato la sua previsione.</div></div>
     </div>
 
@@ -178,7 +178,7 @@ linear-gradient(145deg,#28192f,#15101b);border:1px solid rgba(199,166,106,.7);bo
 
   <div class="reading" id="reading">
     <div class="readbox">
-      <div class="read-orbit"><img class="read-photo" data-morris alt="Morris"></div>
+      <div class="read-orbit"><img class="read-photo" src="./morris.jpg?v=13" alt="Morris"></div>
       <div class="read-title" id="readTitle">Morris si concentra…</div>
       <div class="read-sub">Non cambiare scelta.</div>
     </div>
@@ -205,7 +205,7 @@ const SYMBOLS=[
  {id:"square",name:"Quadrato"},
  {id:"star",name:"Stella"}
 ];
-const KEY="morris_esp_settings_v10";
+const KEY="morris_esp_settings_v13";
 let settings=Object.assign({forced:"star",sound:true,showAll:true},JSON.parse(localStorage.getItem(KEY)||"{}"));
 let state="idle",deck=[],selected=null;
 const $=id=>document.getElementById(id);
@@ -275,7 +275,7 @@ function chooseCard(index){
  setTimeout(()=>$("readTitle").textContent="Sta percependo il simbolo…",700);
  setTimeout(()=>{
   reading.classList.remove("show");
-  cards.children[index].classList.add("revealed");
+  const chosen=cards.children[index];chosen.innerHTML='<div class="card-box"><div class="card-face card-front" style="opacity:1;visibility:visible;transform:none">'+symbolHTML(deck[index])+'</div></div>';
   tone();if(navigator.vibrate)navigator.vibrate(25);
   state="revealed";
   setPrompt("Coincide.","La carta scelta mostra esattamente la previsione di Morris.");
@@ -284,7 +284,7 @@ function chooseCard(index){
 }
 function revealAll(){
  if(state!=="revealed"&&state!=="all")return;
- [...cards.children].forEach((card,i)=>setTimeout(()=>card.classList.add("revealed"),i*90));
+ [...cards.children].forEach((card,i)=>setTimeout(()=>{card.innerHTML='<div class="card-box"><div class="card-face card-front" style="opacity:1;visibility:visible;transform:none">'+symbolHTML(deck[i])+'</div></div>'},i*90));
  state="all";showAllBtn.classList.add("hidden");
  setPrompt("Cinque simboli diversi.","Una sola carta coincide con la previsione.");
 }
@@ -315,7 +315,7 @@ hotspot.addEventListener("mousedown",beginPress);
 hotspot.addEventListener("contextmenu",e=>e.preventDefault());
 
 if("serviceWorker"in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{})}
-loadMorris();renderPrediction();renderCards();renderSettings();
+renderPrediction();renderCards();renderSettings();
 })();
 </script>
 </body>
