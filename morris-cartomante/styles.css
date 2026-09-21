@@ -343,3 +343,80 @@
   overscroll-behavior:contain;
 }
 .deck-stage.ritual-v16 .deck-card{pointer-events:none}
+
+
+/* v19 immersive Night Ritual */
+.night-atmos-v19{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity 1.1s ease;overflow:hidden}
+.night-ritual-v19 .night-atmos-v19{opacity:1}
+.night-atmos-v19>*{position:absolute}
+.night-moon-v19{width:380px;height:380px;left:50%;top:19%;transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle,#cfe2ff28 0,#88aee91a 25%,#4e6d9b0f 45%,transparent 72%);filter:blur(2px)}
+.night-fog-v19{left:-20%;width:140%;height:34%;filter:blur(30px);opacity:.18;background:radial-gradient(ellipse at center,#6c8eb233,transparent 70%)}
+.night-fog-v19.f1{top:26%;animation:fogDriftV19 18s ease-in-out infinite alternate}
+.night-fog-v19.f2{top:58%;animation:fogDriftV19 24s ease-in-out infinite alternate-reverse;opacity:.12}
+@keyframes fogDriftV19{from{transform:translateX(-6%) scale(1)}to{transform:translateX(7%) scale(1.08)}}
+.night-particles-v19{inset:0}
+.night-particles-v19 i{position:absolute;left:var(--x);bottom:-10px;width:3px;height:3px;border-radius:50%;background:#c9ddff;box-shadow:0 0 8px #9bc0ff99;opacity:.22;animation:floatParticleV19 var(--d) linear infinite;animation-delay:var(--delay)}
+@keyframes floatParticleV19{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:.28}70%{opacity:.18}100%{transform:translateY(-110vh) translateX(24px) scale(1.25);opacity:0}}
+.night-vignette-v19{inset:0;background:radial-gradient(circle at 50% 46%,transparent 0 28%,rgba(4,8,15,.28) 56%,rgba(3,6,12,.78) 100%)}
+
+.night-ritual-v19 main,.night-ritual-v19 .topbar,.night-ritual-v19 footer{position:relative;z-index:2}
+.night-ritual-v19 .reader-shell{position:relative}
+.night-ritual-v19 .reader-shell:before{content:"";position:absolute;inset:6% 14% 30%;pointer-events:none;background:radial-gradient(ellipse,#8fb7ff16 0,#6687b910 38%,transparent 72%);filter:blur(10px)}
+.night-ritual-v19 .table{position:relative;border-color:#89a9d125!important;background:linear-gradient(180deg,#081223f2,#050c18f5)!important;box-shadow:0 30px 90px #000a,inset 0 0 80px #5c80b20a}
+.night-ritual-v19 .table:before{content:"";position:absolute;left:50%;top:56%;width:68%;height:52%;transform:translate(-50%,-50%);pointer-events:none;background:radial-gradient(ellipse,#b7d2ff13,transparent 68%);filter:blur(10px)}
+.night-ritual-v19 .controls{background:linear-gradient(180deg,#081321f2,#060e19f7)!important}
+.night-ritual-v19 .oracle{border-color:#aac7ea22;background:#09172aa6}
+.night-ritual-v19 .oracle img{box-shadow:0 0 0 1px #bdd8ff30,0 0 28px #75a7e83c;animation:morrisBreathV19 4.8s ease-in-out infinite}
+@keyframes morrisBreathV19{0%,100%{transform:scale(1);filter:brightness(.96)}50%{transform:scale(1.025);filter:brightness(1.08)}}
+
+.night-enter-v19 .topbar,.night-enter-v19 .controls,.night-enter-v19 .section-head,.night-enter-v19 footer{animation:lightsDownV19 1.35s ease both}
+@keyframes lightsDownV19{0%{filter:brightness(1)}35%{filter:brightness(.5)}70%{filter:brightness(.72)}100%{filter:brightness(1)}}
+.night-awaken-v19{animation:tableAwakenV19 1.8s ease-out}
+@keyframes tableAwakenV19{0%{box-shadow:0 30px 90px #000a,inset 0 0 0 #0000}35%{box-shadow:0 30px 100px #000a,inset 0 0 90px #86b6ff18}100%{box-shadow:0 30px 90px #000a,inset 0 0 80px #5c80b20a}}
+
+.night-volume-wrap-v19{display:grid;grid-template-columns:auto 1fr 28px;gap:9px;align-items:center;margin-top:8px;padding:9px 10px;border:1px solid #ffffff10;border-radius:9px;background:#07121f}
+.night-volume-wrap-v19 span{font-size:10px;color:#aab7c9}.night-volume-wrap-v19 input{width:100%;accent-color:#9dbce3}.night-volume-wrap-v19 b{font:700 10px ui-monospace,monospace;color:#d8e6f8;text-align:right}
+body:not(.night-ritual-v19) .night-volume-wrap-v19{opacity:.42}
+
+.night-energy-v19{height:24px!important;border-color:#9ebde044!important;background:#050c17e6!important;overflow:visible!important}
+.night-energy-v19:before{content:attr(data-label);position:absolute;left:0;top:-20px;width:100%;text-align:center;font:800 8px ui-monospace,monospace;letter-spacing:.18em;color:#9ebee8}
+.night-energy-v19 span{background:linear-gradient(90deg,#274f82,#678fc8 46%,#d6c188 100%)!important;box-shadow:0 0 18px #719fe872}
+.night-energy-pulse-v19{animation:energyPulseV19 .35s ease}
+@keyframes energyPulseV19{50%{filter:brightness(1.18)}}
+.night-shuffle-complete-v19:after{content:"";position:absolute;inset:8%;pointer-events:none;border-radius:28px;box-shadow:inset 0 0 80px #b7d8ff28,0 0 55px #799bd622;animation:completePulseV19 1.2s ease-out}
+@keyframes completePulseV19{0%{opacity:0;transform:scale(.96)}35%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.05)}}
+
+.night-ritual-v19 .cinematic-reveal-v16{animation:nightRevealLiftV19 1.15s cubic-bezier(.18,.72,.18,1)!important}
+.night-ritual-v19 .reveal-aura-v16{background:radial-gradient(circle,#d6e8ff7a 0,#739bd94b 32%,transparent 72%)!important;filter:blur(10px)!important}
+@keyframes nightRevealLiftV19{0%{transform:translateY(0) scale(1);filter:brightness(.82)}28%{transform:translateY(-8px) scale(1.025);filter:brightness(.92)}58%{transform:translateY(-15px) scale(1.055);filter:brightness(1.18)}100%{transform:translateY(0) scale(1);filter:brightness(1)}}
+
+.secret-ready-v17{position:relative}
+.secret-seal-v19{position:absolute;inset:29px 0 0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;border:1px solid #9fbce232;background:linear-gradient(180deg,#081628f2,#06101df7);opacity:0;transform:scale(.96);pointer-events:none;transition:.45s ease}
+.secret-seal-v19.active{opacity:1;transform:scale(1)}
+.secret-seal-v19 span{font-size:24px;color:#c8dcf4;text-shadow:0 0 18px #8eb5e1}.secret-seal-v19 b{font:900 10px ui-monospace,monospace;letter-spacing:.16em;color:#e5edf7;margin-top:7px}.secret-seal-v19 small{font-size:9px;color:#879bb5;margin-top:4px}
+.question-label{position:relative}
+
+.night-result-v19{position:relative}
+.night-verdict-v19{margin-bottom:18px;padding:22px 24px;border:1px solid #a5c4e238;border-radius:14px;background:radial-gradient(circle at 15% 0,#6e94c31b,transparent 48%),linear-gradient(180deg,#0b192b,#071220);box-shadow:0 18px 50px #0006}
+.night-verdict-v19 span{font:900 9px ui-monospace,monospace;letter-spacing:.18em;text-transform:uppercase;color:#a9c7eb}
+.night-verdict-v19 h3{font-size:clamp(26px,4vw,46px);margin:8px 0 8px;letter-spacing:-.04em;color:#edf4fb}.night-verdict-v19 p{margin:0;color:#b9c6d7;line-height:1.6}
+
+/* distinct Major Arcana night effects */
+.fx-major-v19{animation:fxMajorV19 1.5s ease-out}.fx-torre-v19{animation:fxTorreV19 1.5s ease-out}.fx-morte-v19{animation:fxMorteV19 1.5s ease-out}.fx-diavolo-v19{animation:fxDiavoloV19 1.5s ease-out}.fx-sole-v19{animation:fxSoleV19 1.5s ease-out}.fx-amanti-v19{animation:fxAmantiV19 1.5s ease-out}.fx-luna-v19{animation:fxLunaV19 1.5s ease-out}.fx-stella-v19{animation:fxStellaV19 1.5s ease-out}.fx-giudizio-v19{animation:fxGiudizioV19 1.5s ease-out}.fx-mondo-v19{animation:fxMondoV19 1.5s ease-out}
+@keyframes fxMajorV19{35%{box-shadow:0 0 65px #739bd735,inset 0 0 70px #9cc3f31b}}
+@keyframes fxTorreV19{0%,100%{filter:none}18%{filter:brightness(1.8)}24%{filter:brightness(.7)}31%{filter:brightness(1.5)}45%{box-shadow:inset 0 0 90px #d5e9ff30}}
+@keyframes fxMorteV19{35%{filter:saturate(.55) brightness(.82);box-shadow:inset 0 0 110px #8ca4bd22}}
+@keyframes fxDiavoloV19{35%{box-shadow:inset 0 0 100px #7a2f3a2b,0 0 65px #34121c55}}
+@keyframes fxSoleV19{35%{filter:brightness(1.22);box-shadow:inset 0 0 100px #f0cb713d,0 0 45px #dfb95528}}
+@keyframes fxAmantiV19{35%{box-shadow:inset 0 0 100px #d886a125,0 0 45px #d18aa225}}
+@keyframes fxLunaV19{35%{filter:brightness(.9) saturate(.75);box-shadow:inset 0 0 100px #a9cfff34}}
+@keyframes fxStellaV19{35%{box-shadow:inset 0 0 110px #bcdfff32,0 0 60px #7ba4d32b}}
+@keyframes fxGiudizioV19{35%{filter:brightness(1.16);box-shadow:inset 0 0 105px #d9e9ff2d}}
+@keyframes fxMondoV19{35%{box-shadow:inset 0 0 120px #b8d2a823,0 0 60px #c7d6aa20}}
+
+@media(max-width:680px){
+  .night-moon-v19{width:290px;height:290px;top:24%}
+  .night-ritual-v19 .reader-shell:before{inset:8% 2% 34%}
+  .night-verdict-v19{padding:18px}
+}
