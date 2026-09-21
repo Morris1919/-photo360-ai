@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#070a12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Morris ESP">
+<title>Morris ESP</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<style>
+:root{--bg:#070a12;--panel:#111625;--txt:#f7f3e9;--muted:#aab3c6;--gold:#d8bb75;--cyan:#7ed8e8;--card:#f4efe2;--ink:#181b24}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
+button{font:inherit}
+.app{position:relative;width:100%;height:100dvh;background:radial-gradient(circle at 50% -10%,rgba(126,216,232,.18),transparent 38%),radial-gradient(circle at 10% 100%,rgba(216,187,117,.12),transparent 35%),linear-gradient(160deg,#070a12,#0b1020 60%,#080b12)}
+.screen{position:absolute;inset:0;padding:max(18px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transform:translateY(6px);transition:.3s}
+.screen.active{opacity:1;pointer-events:auto;transform:none}
+.dogwrap{position:relative;width:min(44vw,180px);aspect-ratio:1;filter:drop-shadow(0 16px 34px rgba(0,0,0,.45));margin-bottom:6px}
+.dog{width:100%;height:100%;animation:float 4.5s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-4px)}}
+.nose{position:absolute;left:43%;top:50%;width:16%;height:14%;border-radius:50%}
+h1{font-size:clamp(38px,10vw,56px);margin:4px 0 4px;letter-spacing:.06em}h1 span,.mini span{color:var(--gold)}
+.tag{max-width:340px;text-align:center;color:var(--muted);line-height:1.4;margin:0 0 24px}
+.primary,.secondary,.ghost{border:0;border-radius:999px;font-weight:800;padding:15px 22px;cursor:pointer}
+.primary{min-width:220px;background:linear-gradient(135deg,#e4cc94,#b58e45);color:#171109}
+.secondary{background:rgba(255,255,255,.08);color:var(--txt);border:1px solid rgba(255,255,255,.12)}
+.ghost{background:transparent;color:var(--muted)}
+.foot{position:absolute;bottom:max(12px,env(safe-area-inset-bottom));font-size:11px;color:#7f899d}
+#game{justify-content:flex-start;padding-top:max(14px,env(safe-area-inset-top))}
+.top{width:min(100%,540px);display:flex;justify-content:space-between;align-items:center}
+.mini{font-weight:900;letter-spacing:.08em;font-size:18px}.status{font-size:12px;color:var(--muted)}
+.pred{width:min(100%,540px);margin:14px 0 12px;padding:14px 16px;border:1px solid rgba(216,187,117,.25);border-radius:18px;background:rgba(216,187,117,.08);display:flex;align-items:center;justify-content:space-between;gap:14px;box-shadow:0 18px 45px rgba(0,0,0,.35)}
+.kick{font-size:10px;text-transform:uppercase;letter-spacing:.16em;color:var(--gold);font-weight:900}.ptitle{font-size:14px;font-weight:800}
+.predsym{width:58px;height:58px;border-radius:16px;background:var(--card);color:var(--ink);display:grid;place-items:center}
+.inst{font-size:17px;font-weight:900;text-align:center;margin:3px 0 4px;min-height:24px}.sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px;min-height:18px}
+.cards{width:min(100%,540px);display:grid;grid-template-columns:repeat(5,1fr);gap:7px;perspective:1000px}
+.card{position:relative;aspect-ratio:.67;border:0;background:none;padding:0;perspective:900px}
+.inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .68s cubic-bezier(.2,.8,.2,1),scale .2s;filter:drop-shadow(0 9px 12px rgba(0,0,0,.28))}
+.card.selected .inner{scale:1.06}.card.flip .inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:11px;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.back{background:radial-gradient(circle at 50% 50%,transparent 0 13%,rgba(216,187,117,.35) 13.5% 15%,transparent 15.5%),#111a2d;background-size:22px 22px;border:2px solid var(--gold);box-shadow:inset 0 0 0 3px #111a2d,inset 0 0 0 4px rgba(216,187,117,.5)}
+.back:after{content:"ESP";position:absolute;inset:0;display:grid;place-items:center;font-size:clamp(9px,2.3vw,14px);letter-spacing:.14em;font-weight:900;color:#ead69d}
+.front{transform:rotateY(180deg);background:linear-gradient(145deg,#faf8f2,#e9dfca);display:grid;place-items:center;color:var(--ink);border:1px solid rgba(0,0,0,.12)}
+.controls{width:min(100%,540px);margin-top:auto;padding-top:12px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.controls button{padding:11px 14px;font-size:13px}.hidden{display:none!important}
+.z{position:relative;width:62%;height:62%;display:block}.z.circle{width:55%;height:55%;border:6px solid currentColor;border-radius:50%}.z.square{width:52%;height:52%;border:6px solid currentColor}.z.cross:before,.z.cross:after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:currentColor;border-radius:2px}.z.cross:before{width:20%;height:90%}.z.cross:after{width:90%;height:20%}.z.star{width:auto;height:auto;font:54px/1 Georgia,serif}.waves{width:72%;height:56%}.waves path{fill:none;stroke:currentColor;stroke-width:9;stroke-linecap:round}
+.reading{position:absolute;inset:0;z-index:30;background:rgba(4,7,14,.62);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:.25s}.reading.show{opacity:1;pointer-events:auto}.box{text-align:center}.orb{width:92px;height:92px;border-radius:50%;margin:0 auto 18px;background:radial-gradient(circle at 40% 35%,#d9fdff 0 5%,#7ed8e8 15%,#28445f 45%,#0b1020 72%);box-shadow:0 0 36px rgba(126,216,232,.38);animation:pulse 1.1s ease-in-out infinite}@keyframes pulse{50%{transform:scale(1.08)}}.rtext{font-size:18px;font-weight:900}.rsub{font-size:13px;color:var(--muted);margin-top:5px}
+.modal{position:absolute;inset:0;z-index:60;background:rgba(3,5,10,.86);backdrop-filter:blur(12px);display:none;align-items:flex-end;justify-content:center;padding:14px}.modal.show{display:flex}.sheet{width:min(100%,520px);background:var(--panel);border:1px solid rgba(255,255,255,.1);border-radius:26px;padding:18px;box-shadow:0 24px 80px rgba(0,0,0,.6)}.sh{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.st{font-size:20px;font-weight:900}.close{width:36px;height:36px;border-radius:50%;border:0;background:rgba(255,255,255,.08);color:#fff;font-size:20px}.label{font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:900;margin:14px 0 10px}.picker{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.pick{aspect-ratio:1;border:1px solid rgba(255,255,255,.1);border-radius:15px;background:rgba(255,255,255,.05);color:#eee5d4;display:grid;place-items:center}.pick.active{border-color:var(--gold);background:rgba(216,187,117,.13)}.pick .z.circle,.pick .z.square{border-width:4px}.pick .z.star{font-size:28px}.pick .waves path{stroke-width:8}.row{display:flex;justify-content:space-between;align-items:center;margin:12px 0;font-size:14px}.sw{position:relative;width:52px;height:30px;border:0;border-radius:999px;background:#303646}.sw:before{content:"";position:absolute;left:3px;top:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.2s}.sw.on{background:#8c7440}.sw.on:before{transform:translateX(22px)}.tiny{font-size:11px;color:#7f899d;line-height:1.4;margin-top:12px}
+@media(max-width:390px){.cards{gap:5px}.dogwrap{width:146px}.tag{font-size:14px}.pred{margin-top:10px}.controls{padding-top:8px}}
+</style>
+</head>
+<body>
+<div class="app">
+<section class="screen active" id="home">
+<div class="dogwrap">
+<svg class="dog" viewBox="0 0 220 220" aria-label="Morris">
+<defs><radialGradient id="fur" cx="44%" cy="34%" r="70%"><stop offset="0" stop-color="#fffdf6"/><stop offset=".58" stop-color="#f1eadb"/><stop offset="1" stop-color="#d7c9ad"/></radialGradient><linearGradient id="ear" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e9d8b8"/><stop offset="1" stop-color="#c7ab78"/></linearGradient></defs>
+<ellipse cx="56" cy="95" rx="31" ry="48" transform="rotate(18 56 95)" fill="url(#ear)"/><ellipse cx="164" cy="95" rx="31" ry="48" transform="rotate(-18 164 95)" fill="url(#ear)"/><ellipse cx="110" cy="118" rx="67" ry="64" fill="url(#fur)"/><ellipse cx="83" cy="106" rx="11" ry="14" fill="#1b1c22"/><ellipse cx="137" cy="106" rx="11" ry="14" fill="#1b1c22"/><circle cx="87" cy="101" r="3.2" fill="#fff"/><circle cx="141" cy="101" r="3.2" fill="#fff"/><ellipse cx="110" cy="132" rx="14" ry="10" fill="#14151a"/><path d="M94 145 Q110 158 126 145" fill="none" stroke="#6f5542" stroke-width="4" stroke-linecap="round"/>
+</svg>
+<div class="nose" id="nose"></div>
+</div>
+<h1>MORRIS <span>ESP</span></h1>
+<p class="tag">Morris fa una previsione prima della tua scelta. Tocca una carta qualsiasi e scopri se ha letto la tua mente.</p>
+<button class="primary" id="start">INIZIA L’ESPERIMENTO</button>
+<div class="foot">ESP LAB · ZENER TEST</div>
+</section>
+
+<section class="screen" id="game">
+<div class="top"><div class="mini">MORRIS <span>ESP</span></div><div class="status">● Esperimento attivo</div></div>
+<div class="pred"><div><div class="kick">Predizione di Morris</div><div class="ptitle">Questo è il simbolo scelto prima di te.</div></div><div class="predsym" id="predsym"></div></div>
+<div class="inst" id="inst">Tocca una carta qualsiasi</div><div class="sub" id="sub">La scelta è completamente libera.</div>
+<div class="cards" id="cards"></div>
+<div class="controls"><button class="secondary hidden" id="all">MOSTRA LE ALTRE</button><button class="secondary hidden" id="again">NUOVO TEST</button><button class="ghost" id="exit">Esci</button></div>
+</section>
+
+<div class="reading" id="reading"><div class="box"><div class="orb"></div><div class="rtext" id="rtext">Morris si sta concentrando…</div><div class="rsub">Non cambiare scelta.</div></div></div>
+
+<div class="modal" id="modal"><div class="sheet">
+<div class="sh"><div class="st">Controllo segreto</div><button class="close" id="close">×</button></div>
+<div class="label">Simbolo da forzare</div><div class="picker" id="picker"></div>
+<div class="row"><span>Suono rivelazione</span><button class="sw" id="sound"></button></div>
+<div class="row"><span>Mostra “Mostra le altre”</span><button class="sw" id="showall"></button></div>
+<div class="tiny">Segreto: dalla schermata iniziale tieni premuto il naso di Morris per circa un secondo. Le impostazioni restano memorizzate su questo iPhone.</div>
+</div></div>
+</div>
+
+<script>
+(function(){
+var symbols=[{id:"circle",name:"Cerchio"},{id:"cross",name:"Croce"},{id:"waves",name:"Onde"},{id:"square",name:"Quadrato"},{id:"star",name:"Stella"}];
+var key="morrisEspSettingsV1";
+var cfg=Object.assign({forced:"star",sound:true,revealAll:true},JSON.parse(localStorage.getItem(key)||"{}"));
+var phase="idle", chosen=null, deck=[];
+var home=document.getElementById("home"),game=document.getElementById("game"),cards=document.getElementById("cards"),predsym=document.getElementById("predsym"),inst=document.getElementById("inst"),sub=document.getElementById("sub"),reading=document.getElementById("reading"),rtext=document.getElementById("rtext"),all=document.getElementById("all"),again=document.getElementById("again"),modal=document.getElementById("modal"),picker=document.getElementById("picker"),sound=document.getElementById("sound"),showall=document.getElementById("showall");
+
+function save(){localStorage.setItem(key,JSON.stringify(cfg))}
+function sym(id){
+if(id==="waves")return '<svg class="waves" viewBox="0 0 100 70"><path d="M5 16 C20 2 30 30 45 16 S70 2 95 16"/><path d="M5 35 C20 21 30 49 45 35 S70 21 95 35"/><path d="M5 54 C20 40 30 68 45 54 S70 40 95 54"/></svg>';
+if(id==="star")return '<span class="z star">★</span>';
+return '<span class="z '+id+'"></span>';
+}
+function show(which){home.classList.toggle("active",which==="home");game.classList.toggle("active",which==="game")}
+function pred(){predsym.innerHTML=sym(cfg.forced)}
+function render(){
+cards.innerHTML="";
+for(var i=0;i<5;i++){
+var b=document.createElement("button");b.className="card";b.setAttribute("aria-label","Carta "+(i+1));
+b.innerHTML='<span class="inner"><span class="face back"></span><span class="face front"><span class="fs"></span></span></span>';
+(function(n){b.addEventListener("click",function(){choose(n)})})(i);cards.appendChild(b);
+}}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function assign(idx){
+var rest=shuffle(symbols.map(function(s){return s.id}).filter(function(x){return x!==cfg.forced}));
+deck=new Array(5);deck[idx]=cfg.forced;var p=0;for(var i=0;i<5;i++)if(i!==idx)deck[i]=rest[p++];
+Array.from(cards.children).forEach(function(c,i){c.querySelector(".fs").innerHTML=sym(deck[i])});
+}
+function tone(){
+if(!cfg.sound)return;try{var AC=window.AudioContext||window.webkitAudioContext,c=new AC(),o=c.createOscillator(),g=c.createGain();o.type="sine";o.frequency.setValueAtTime(620,c.currentTime);o.frequency.exponentialRampToValueAtTime(920,c.currentTime+.32);g.gain.setValueAtTime(.0001,c.currentTime);g.gain.exponentialRampToValueAtTime(.08,c.currentTime+.04);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.5);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.52);setTimeout(function(){c.close()},650)}catch(e){}
+}
+function choose(idx){
+if(phase!=="idle")return;phase="reading";chosen=idx;assign(idx);
+Array.from(cards.children).forEach(function(c,i){c.disabled=true;c.classList.toggle("selected",i===idx)});
+inst.textContent="Scelta registrata";sub.textContent="Concentrati sulla carta e guarda Morris.";reading.classList.add("show");
+var msgs=["Morris si sta concentrando…","Sta percependo qualcosa…","Ci siamo."],step=0;rtext.textContent=msgs[0];
+var iv=setInterval(function(){step++;if(step<msgs.length)rtext.textContent=msgs[step]},700);
+setTimeout(function(){clearInterval(iv);reading.classList.remove("show");cards.children[idx].classList.add("flip");tone();phase="revealed";inst.textContent="Morris l’aveva previsto.";sub.textContent="La carta scelta coincide con la sua previsione.";if(cfg.revealAll)all.classList.remove("hidden");again.classList.remove("hidden")},2350);
+}
+function revealAll(){if(phase!=="revealed"&&phase!=="all")return;Array.from(cards.children).forEach(function(c,i){setTimeout(function(){c.classList.add("flip")},i*100)});phase="all";all.classList.add("hidden");inst.textContent="Cinque simboli. Una sola coincidenza.";sub.textContent="Cerchio, croce, onde, quadrato e stella."}
+function reset(){phase="idle";chosen=null;deck=[];inst.textContent="Tocca una carta qualsiasi";sub.textContent="La scelta è completamente libera.";all.classList.add("hidden");again.classList.add("hidden");pred();render()}
+function settings(){
+picker.innerHTML="";symbols.forEach(function(s){var b=document.createElement("button");b.className="pick"+(cfg.forced===s.id?" active":"");b.innerHTML=sym(s.id);b.setAttribute("aria-label",s.name);b.onclick=function(){cfg.forced=s.id;save();settings();pred()};picker.appendChild(b)});
+sound.classList.toggle("on",!!cfg.sound);showall.classList.toggle("on",!!cfg.revealAll)
+}
+function open(){settings();modal.classList.add("show")}function close(){modal.classList.remove("show")}
+document.getElementById("start").onclick=function(){reset();show("game")};document.getElementById("exit").onclick=function(){show("home");reset()};again.onclick=reset;all.onclick=revealAll;document.getElementById("close").onclick=close;modal.onclick=function(e){if(e.target===modal)close()};
+sound.onclick=function(){cfg.sound=!cfg.sound;save();settings()};showall.onclick=function(){cfg.revealAll=!cfg.revealAll;save();settings()};
+var nose=document.getElementById("nose"),timer=null;function begin(e){e.preventDefault();clearTimeout(timer);timer=setTimeout(open,1200)}function end(){clearTimeout(timer)}
+nose.addEventListener("touchstart",begin,{passive:false});nose.addEventListener("touchend",end);nose.addEventListener("touchcancel",end);nose.addEventListener("mousedown",begin);nose.addEventListener("mouseup",end);nose.addEventListener("mouseleave",end);nose.addEventListener("contextmenu",function(e){e.preventDefault()});
+pred();render();settings();
+if("serviceWorker"in navigator)window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){})});
+})();
+</script>
+</body></html>
