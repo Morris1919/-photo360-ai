@@ -1,0 +1,16 @@
+{
+  "name": "Shuffle Desk",
+  "short_name": "Shuffle Desk",
+  "start_url": "/?v=7",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/shuffle-desk-icon.png?v=7",
+      "sizes": "120x120",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
