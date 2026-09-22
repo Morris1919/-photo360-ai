@@ -26,7 +26,7 @@ const Q=[
 {bit:null,t:"Per un istante dimentica persino quale animale sia.",s:"Se questo pensiero fosse custodito da qualche parte, dove lo sentiresti?",a:"Dietro una porta chiusa",b:"Oltre una finestra"}
 ];let v=0,i=0,order=[];
 function makeGrid(){$("grid").innerHTML=A.map(a=>'<div class="animal"><div class="e">'+a[1]+'</div><div class="n">'+a[0]+'</div></div>').join("");show("pick")}
-function ask(){let x=order[i];$("qt").textContent=x[0];$("sub").textContent=x.s;$("c0").textContent=x.a;$("c1").textContent=x.b;$("step").textContent="DOMANDA "+(i+1)+" DI 6";$("bar").style.width=((i+1)/6*100)+"%";show("q")}
+function ask(){let x=order[i];$("qt").textContent=x.t;$("sub").textContent=x.s;$("c0").textContent=x.a;$("c1").textContent=x.b;$("step").textContent="DOMANDA "+(i+1)+" DI 6";$("bar").style.width=((i+1)/6*100)+"%";show("q")}
 function ans(b){let x=order[i];if(x.bit!==null&&b)v|=(1<<x.bit);i++;try{navigator.vibrate&&navigator.vibrate(15)}catch(e){};i<6?setTimeout(ask,180):setTimeout(focus,220)}
 function focus(){show("focus");let t=$("ft");t.textContent="Morris sta seguendo qualcosa...";setTimeout(()=>t.textContent="Non è una parola. È un'immagine...",850);setTimeout(()=>t.textContent="Adesso è nitida.",1700);setTimeout(reveal,2450)}
 function reveal(){let a=A[v];$("re").textContent=a[1];$("rn").textContent=a[0];show("result");try{navigator.vibrate&&navigator.vibrate([25,40,35])}catch(e){}}
