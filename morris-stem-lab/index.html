@@ -137,15 +137,25 @@
       </div>
       <div class="channel-buttons"><button class="mute">MUTE</button><button class="solo">SOLO</button></div>
       <details>
-        <summary>EQ + FX</summary>
+        <summary>EQ + FX RACK</summary>
+        <div class="fx-head"><span>EQ / DYNAMICS</span><button class="reset-fx" type="button">RESET FX</button></div>
         <div class="fx-grid">
           <label>LOW <input class="low" type="range" min="-12" max="12" step="0.5" value="0"></label>
           <label>MID <input class="mid" type="range" min="-12" max="12" step="0.5" value="0"></label>
           <label>HIGH <input class="high" type="range" min="-12" max="12" step="0.5" value="0"></label>
           <label>COMP <input class="comp" type="range" min="0" max="1" step="0.01" value="0.25"></label>
+        </div>
+        <div class="fx-section-title">MODULAZIONE / COLORE</div>
+        <div class="fx-grid">
+          <label>CHORUS <input class="chorus" type="range" min="0" max="0.75" step="0.01" value="0"></label>
+          <label>FLANGER <input class="flanger" type="range" min="0" max="0.65" step="0.01" value="0"></label>
+          <label>PHASER <input class="phaser" type="range" min="0" max="0.75" step="0.01" value="0"></label>
+          <label>DRIVE <input class="drive" type="range" min="0" max="0.65" step="0.01" value="0"></label>
+        </div>
+        <div class="fx-section-title">SPAZIO</div>
+        <div class="fx-grid">
           <label>DELAY <input class="delay" type="range" min="0" max="0.7" step="0.01" value="0"></label>
           <label>REVERB <input class="reverb" type="range" min="0" max="0.7" step="0.01" value="0"></label>
-          <label>FLANGER <input class="flanger" type="range" min="0" max="0.55" step="0.01" value="0"></label>
         </div>
       </details>
     </article>
