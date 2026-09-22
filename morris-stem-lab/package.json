@@ -3,7 +3,9 @@
   "version":"1.0.0",
   "private":true,
   "type":"module",
-  "scripts":{"dev":"vite","build":"vite build","start":"node server.js"},
-  "dependencies":{"demucs-web":"latest","onnxruntime-web":"latest","express":"latest"},
-  "devDependencies":{"vite":"latest"}
+  "scripts":{
+    "build":"rm -rf dist && mkdir -p dist && cp index.html main.js styles.css audio-engine.js analysis.js storage.js manifest.webmanifest sw.js dist/ && cp -r lib dist/",
+    "start":"node server.js"
+  },
+  "dependencies":{"express":"4.21.2"}
 }
