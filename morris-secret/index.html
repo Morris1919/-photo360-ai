@@ -18,15 +18,17 @@
 (()=>{"use strict";const $=x=>document.getElementById(x),SS=[...document.querySelectorAll(".s")],show=x=>SS.forEach(s=>s.classList.toggle("on",s.id===x));
 const A=[["CANE","🐶"],["GATTO","🐱"],["LEONE","🦁"],["ELEFANTE","🐘"],["LUPO","🐺"],["CAVALLO","🐴"],["DELFINO","🐬"],["AQUILA","🦅"],["VOLPE","🦊"],["ORSO","🐻"],["CONIGLIO","🐰"],["TIGRE","🐯"],["GUFO","🦉"],["SCIMMIA","🐵"],["PANDA","🐼"],["SERPENTE","🐍"]];
 const Q=[
-["Se il tuo pensiero avesse una temperatura, quale sentiresti?","Non collegarla all'animale. Scegli la sensazione che arriva per prima.","❄️ Freddo","🔥 Caldo"],
-["Immagina di entrare in una stanza completamente buia.","Il tuo pensiero arriverebbe prima come...","🔊 Un suono","✨ Un bagliore"],
-["Se quel pensiero fosse un ricordo lontano, dove lo metteresti?","Non cercare una spiegazione logica.","🚪 Dietro una porta","🪟 Oltre una finestra"],
-["Chiudi gli occhi per un secondo. Ora riaprili.","Quale delle due parole ti sembra più vicina, senza sapere perché?","🌑 Segreto","🌕 Richiamo"]
-];let v=0,i=0;
+{bit:0,t:"Fai apparire soltanto il nome nella tua mente.",s:"Come se fosse inciso nel buio: dentro quel nome compare almeno una A?",a:"No, nessuna A",b:"Sì, c'è una A"},
+{bit:1,t:"Ora lascia che alcune lettere si spengano.",s:"Nel nome rimane visibile almeno una E?",a:"No, nessuna E",b:"Sì, c'è una E"},
+{bit:2,t:"Immagina sei piccole caselle vuote.",s:"Per scrivere tutto il nome del tuo animale servono almeno sei caselle?",a:"No, ne bastano meno",b:"Sì, almeno sei"},
+{bit:3,t:"Apri mentalmente un vecchio dizionario esattamente a metà.",s:"Il nome del tuo animale starebbe nella prima metà, da A a L?",a:"No, dalla M alla Z",b:"Sì, dalla A alla L"},
+{bit:null,t:"Non pensare alle lettere. Pensa alla sua presenza.",s:"Se entrasse nella stanza adesso, quale sensazione arriverebbe per prima?",a:"Una presenza silenziosa",b:"Un'energia improvvisa"},
+{bit:null,t:"Per un istante dimentica persino quale animale sia.",s:"Se questo pensiero fosse custodito da qualche parte, dove lo sentiresti?",a:"Dietro una porta chiusa",b:"Oltre una finestra"}
+];let v=0,i=0,order=[];
 function makeGrid(){$("grid").innerHTML=A.map(a=>'<div class="animal"><div class="e">'+a[1]+'</div><div class="n">'+a[0]+'</div></div>').join("");show("pick")}
-function ask(){let x=Q[i];$("qt").textContent=x[0];$("sub").textContent=x[1];$("c0").textContent=x[2];$("c1").textContent=x[3];$("step").textContent="DOMANDA "+(i+1)+" DI 4";$("bar").style.width=((i+1)*25)+"%";show("q")}
-function ans(b){v|=(b<<i);i++;try{navigator.vibrate&&navigator.vibrate(15)}catch(e){};i<4?setTimeout(ask,180):setTimeout(focus,220)}
+function ask(){let x=order[i];$("qt").textContent=x[0];$("sub").textContent=x.s;$("c0").textContent=x.a;$("c1").textContent=x.b;$("step").textContent="DOMANDA "+(i+1)+" DI 6";$("bar").style.width=((i+1)/6*100)+"%";show("q")}
+function ans(b){let x=order[i];if(x.bit!==null&&b)v|=(1<<x.bit);i++;try{navigator.vibrate&&navigator.vibrate(15)}catch(e){};i<6?setTimeout(ask,180):setTimeout(focus,220)}
 function focus(){show("focus");let t=$("ft");t.textContent="Morris sta seguendo qualcosa...";setTimeout(()=>t.textContent="Non è una parola. È un'immagine...",850);setTimeout(()=>t.textContent="Adesso è nitida.",1700);setTimeout(reveal,2450)}
 function reveal(){let a=A[v];$("re").textContent=a[1];$("rn").textContent=a[0];show("result");try{navigator.vibrate&&navigator.vibrate([25,40,35])}catch(e){}}
-$("start").onclick=makeGrid;$("chosen").onclick=()=>{v=0;i=0;ask()};$("c0").onclick=()=>ans(0);$("c1").onclick=()=>ans(1);$("again").onclick=makeGrid;$("hb").onclick=()=>show("home");})();
+$("start").onclick=makeGrid;$("chosen").onclick=()=>{v=0;i=0;order=Q.slice().sort(()=>Math.random()-.5);ask()};$("c0").onclick=()=>ans(0);$("c1").onclick=()=>ans(1);$("again").onclick=makeGrid;$("hb").onclick=()=>show("home");})();
 </script></body></html>
