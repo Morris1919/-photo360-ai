@@ -1,0 +1,9 @@
+{
+  "name":"MORRIS STEM LAB",
+  "short_name":"STEM LAB",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#07090d",
+  "theme_color":"#07090d",
+  "description":"Stem separation and remix workstation running locally in the browser."
+}
