@@ -1,0 +1,10 @@
+{
+  "name":"Morris Secret",
+  "short_name":"Morris Secret",
+  "start_url":"./",
+  "scope":"./",
+  "display":"standalone",
+  "background_color":"#050508",
+  "theme_color":"#07070a",
+  "description":"Esperimento mentale con Morris"
+}
