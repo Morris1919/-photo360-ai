@@ -15,7 +15,7 @@ const els={
   trackTemplate:$('#trackTemplate')
 };
 
-let ctx=null,mixer=null,sourceBuffer=null,sourceFileName='',processor=null,currentProjectId=null,raf=0;
+let ctx=null,mixer=null,sourceBuffer=null,sourceFileName='',processor=null,currentProjectId=null,raf=0,keyboardGridOffset=0;
 const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
 
 function formatTime(v){v=Math.max(0,Number(v)||0);const m=Math.floor(v/60),s=Math.floor(v%60);return m+':'+String(s).padStart(2,'0');}
@@ -187,7 +187,7 @@ els.extraFile.addEventListener('change',async e=>{
 
 function parseChords(){return els.chordsInput.value.split(/[|,\n]+/).map(s=>s.trim()).filter(Boolean);}
 function syncKeyboard(){
-  if(!mixer)return;mixer.setKeyboard({enabled:els.keyboardEnabled.checked,bpm:Number(els.bpmInput.value)||120,style:els.keyboardStyle.value,intensity:Number(els.keyboardIntensity.value),humanize:Number(els.keyboardHumanize.value),chords:parseChords()});
+  if(!mixer)return;mixer.setKeyboard({enabled:els.keyboardEnabled.checked,bpm:Number(els.bpmInput.value)||120,style:els.keyboardStyle.value,intensity:Number(els.keyboardIntensity.value),humanize:Number(els.keyboardHumanize.value),gridOffset:keyboardGridOffset,chords:parseChords()});
 }
 [els.keyboardEnabled,els.bpmInput,els.keyboardStyle,els.keyboardIntensity,els.keyboardHumanize,els.chordsInput].forEach(el=>el.addEventListener('input',syncKeyboard));
 
@@ -195,9 +195,13 @@ async function runAnalysis(auto=false){
   if(!sourceBuffer){if(!auto)status('Per analizzare armonia e BPM serve il brano originale.',true);return;}
   els.analyzeBtn.disabled=true;const old=els.analysisNote.textContent;
   try{
-    els.analysisNote.textContent='Analizzo tempo e armonia…';
-    const out=await analyzeMusic(sourceBuffer,p=>{els.analysisNote.textContent='Analisi locale '+Math.round(p*100)+'%';});
-    els.bpmInput.value=out.bpm;els.chordsInput.value=out.chords.join(' | ');els.analysisNote.textContent='Stima: '+out.bpm+' BPM, '+out.chords.length+' battute. Correggi gli accordi se necessario.';
+    els.analysisNote.textContent='Aggancio batteria, beat e armonia…';
+    const drums=mixer?.tracks?.find(t=>t.name==='DRUMS')?.buffer||sourceBuffer;
+    const harmony=mixer?.tracks?.find(t=>t.name==='OTHER')?.buffer||sourceBuffer;
+    const out=await analyzeMusic(drums,harmony,p=>{els.analysisNote.textContent='Analisi locale '+Math.round(p*100)+'%';});
+    keyboardGridOffset=Number(out.barOffset)||0;
+    els.bpmInput.value=out.bpm;els.chordsInput.value=out.chords.join(' | ');
+    els.analysisNote.textContent='Agganciata ai DRUMS: '+out.bpm+' BPM • primo downbeat ~'+keyboardGridOffset.toFixed(2)+' s • '+out.chords.length+' battute.';
     syncKeyboard();
     if(auto){els.keyboardEnabled.checked=true;syncKeyboard();}
   }catch(e){console.warn(e);els.analysisNote.textContent='Analisi automatica non riuscita. Puoi inserire BPM e accordi manualmente.';}
@@ -218,7 +222,7 @@ els.saveProjectBtn.addEventListener('click',async()=>{
     progress('Salvo progetto',10,'Scrivo stem e impostazioni nella memoria del browser…');
     const id=currentProjectId||crypto.randomUUID(),now=Date.now();
     const rec={id,name:baseName(sourceFileName||'Morris Stem Project'),updatedAt:now,duration:mixer.duration,master:Number(els.masterVolume.value),
-      keyboard:{enabled:els.keyboardEnabled.checked,bpm:Number(els.bpmInput.value),style:els.keyboardStyle.value,intensity:Number(els.keyboardIntensity.value),humanize:Number(els.keyboardHumanize.value),chords:parseChords()},
+      keyboard:{enabled:els.keyboardEnabled.checked,bpm:Number(els.bpmInput.value),style:els.keyboardStyle.value,intensity:Number(els.keyboardIntensity.value),humanize:Number(els.keyboardHumanize.value),gridOffset:keyboardGridOffset,chords:parseChords()},
       tracks:mixer.tracks.map(t=>({name:t.name,kind:t.kind,settings:{...t.settings},audio:serializeBuffer(t.buffer)}))};
     await saveProject(rec);currentProjectId=id;progress('Progetto salvato',100,'Resta su questo dispositivo.');setTimeout(hideProgress,700);status('Progetto salvato nel browser.');
   }catch(e){hideProgress();status('Salvataggio non riuscito, probabilmente per spazio locale insufficiente: '+(e?.message||e),true);}
@@ -247,7 +251,7 @@ async function openProject(id){
     ensureCtx();mixer.clear();els.mixer.innerHTML='';
     for(const tr of rec.tracks){const b=deserializeBuffer(ctx,tr.audio);addTrackUI(mixer.addTrack(tr.name,b,tr.kind,tr.settings));}
     currentProjectId=id;sourceFileName=rec.name;sourceBuffer=null;els.masterVolume.value=rec.master??.9;mixer.setMaster(els.masterVolume.value);
-    const k=rec.keyboard||{};els.keyboardEnabled.checked=!!k.enabled;els.bpmInput.value=k.bpm||120;els.keyboardStyle.value=k.style||'Pad';els.keyboardIntensity.value=k.intensity??.38;els.keyboardHumanize.value=k.humanize??.015;els.chordsInput.value=(k.chords||[]).join(' | ');syncKeyboard();
+    const k=rec.keyboard||{};keyboardGridOffset=Number(k.gridOffset)||0;els.keyboardEnabled.checked=!!k.enabled;els.bpmInput.value=k.bpm||120;els.keyboardStyle.value=k.style||'Pad';els.keyboardIntensity.value=k.intensity??.38;els.keyboardHumanize.value=k.humanize??.015;els.chordsInput.value=(k.chords||[]).join(' | ');syncKeyboard();
     showWorkspace();els.projectsDialog.close();progress('Progetto aperto',100,'Pronto.');setTimeout(hideProgress,600);
   }catch(e){hideProgress();status('Non riesco ad aprire il progetto: '+(e?.message||e),true);}
 }
