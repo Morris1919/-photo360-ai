@@ -2,13 +2,15 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a070c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Morris Dream">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
 <title>Morris Dream</title>
+<meta name="description" content="Pensa a un’immagine. Quattro visioni, un solo telefono. Entra nel sogno di Morris.">
+<link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-192.png">
 <style>
 :root{--bg:#08060a;--wine:#241018;--wine2:#3a1826;--gold:#d7b37a;--gold2:#f0d9a4;--ink:#f8f1e7;--muted:#b9aa9b;--card:#171018cc;--line:#b88c5045}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -74,12 +76,24 @@ radial-gradient(circle at 56% 75%,#fff 0 .7px,transparent 1.3px);background-size
 .result-copy{font-size:14px;color:var(--muted);margin:20px 0 22px;max-width:320px;line-height:1.45}
 .result-actions{width:100%;display:grid;gap:10px}
 @media (max-height:720px){.brand{font-size:40px}.hero{inset-bottom:42%}.symbol-grid,.round-grid{gap:7px}.symbol{border-radius:13px}.symbol .glyph{font-size:28px}.centerhead{margin:10px 0}.centerhead h2{font-size:24px}.focus-photo{width:160px;height:160px}}
+
+/* Refined mobile experience */
+body{height:auto;min-height:100svh;overflow:auto;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.app{height:100svh;height:100dvh;min-height:640px}
+.screen{visibility:hidden;overflow-y:auto}.screen.active{visibility:visible}
+.screen:not(.active){transition:none}
+#home{isolation:isolate}.hero{z-index:-1;bottom:32%}.hero img{object-position:center 25%;filter:saturate(.82) brightness(.83)}.hero:after{background:linear-gradient(180deg,#08060a10 25%,#08060a55 58%,#08060a 97%)}
+.kicker,.step,.result-kicker,.focus-kicker{font-size:12px;letter-spacing:.16em}.copy,.centerhead p,.result-copy{font-size:16px}.symbol .name{font-size:12px;color:#dccbbb;letter-spacing:.02em}.symbol .glyph{display:flex;align-items:center;justify-content:center}.glyph svg{width:36px;height:36px;stroke-width:1.6}.symbol-grid{flex:1;grid-template-rows:repeat(4,minmax(64px,1fr));gap:8px;max-height:440px;width:100%;margin:auto}.symbol-grid .symbol{aspect-ratio:auto;min-height:64px;gap:5px}.round-grid .symbol{min-height:95px;aspect-ratio:.9}.round-grid .glyph svg{width:44px;height:44px}.centerhead{margin:15px 0}.centerhead h2{font-size:28px}.primary{font-size:14px}.answer{font-size:20px;min-height:64px}.footer-actions{margin-top:12px}.focus-photo{width:245px;height:245px;object-position:center 18%}.result-glyph svg{width:118px;height:118px;stroke-width:1.2}.result-ring{width:240px;height:300px}.result-name{text-transform:uppercase;letter-spacing:.08em}.active .result-ring{animation:revelation .8s ease-out both}button{cursor:pointer;touch-action:manipulation}button:focus-visible{outline:3px solid #fff0c9;outline-offset:4px}button:disabled{opacity:.6;cursor:default}.screen h2:focus{outline:none}
+@keyframes revelation{from{opacity:0;transform:scale(.90);filter:blur(6px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
+@media(max-height:760px){.app{min-height:640px}.centerhead{margin:10px 0}.centerhead h2{font-size:24px}.symbol-grid{max-height:350px}.brand{font-size:40px}.copy{margin-bottom:16px}.tagline{font-size:20px}.hero{bottom:38%}.footer-actions{gap:6px}.footer-actions .ghost{min-height:40px}}
+@media(min-width:700px){body{background:radial-gradient(ellipse at 50% 45%,#281821,#08060a 65%)}.app{box-shadow:0 0 90px #0008;border-inline:1px solid #d7b37a20}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <main class="app">
   <section class="screen active" id="home">
-    <div class="hero"><img src="https://raw.githubusercontent.com/Morris1919/-photo360-ai/main/morris-esp/morris.jpg" alt="Morris"><div class="aura"></div></div>
+    <div class="hero"><img src="morris.jpg" alt="Morris"><div class="aura"></div></div>
     <div class="kicker">Esperimento di percezione</div>
     <h1 class="brand">MORRIS <em>DREAM</em></h1>
     <div class="tagline">Pensa a un'immagine.<br>Morris proverà a trovarla.</div>
@@ -112,15 +126,15 @@ radial-gradient(circle at 56% 75%,#fff 0 .7px,transparent 1.3px);background-size
   </section>
 
   <section class="screen" id="focus">
-    <img class="focus-photo" src="https://raw.githubusercontent.com/Morris1919/-photo360-ai/main/morris-esp/morris.jpg" alt="Morris">
+    <img class="focus-photo" src="morris.jpg" alt="Morris">
     <div class="focus-kicker">Connessione in corso</div>
-    <div class="focus-text" id="focusText">Sto separando le immagini...</div>
+    <div class="focus-text" id="focusText" aria-live="polite">Sto separando le immagini...</div>
     <div class="dots"><i></i><i></i><i></i></div>
   </section>
 
   <section class="screen" id="result">
     <div class="result-kicker">Morris ha visto qualcosa</div>
-    <div class="result-ring"><div class="result-glyph" id="resultGlyph"></div><div class="result-name" id="resultName"></div></div>
+    <div class="result-ring"><div class="result-glyph" id="resultGlyph"></div><div class="result-name" id="resultName" aria-live="polite"></div></div>
     <div class="result-copy">Era questa l'immagine che avevi tenuto nella mente?</div>
     <div class="result-actions"><button class="primary" id="again">NUOVO ESPERIMENTO</button><button class="ghost" id="resultHome">HOME</button></div>
   </section>
@@ -146,12 +160,18 @@ const ITEMS=[
 {id:14,name:"Mano",glyph:"✋"},
 {id:15,name:"Teschio",glyph:"☠"}
 ];
+const ICONS=["<path d=\"M20 15.5A9 9 0 0 1 8.5 4 9 9 0 1 0 20 15.5Z\"/>", "<circle cx=\"8\" cy=\"8\" r=\"4\"/><path d=\"m11 11 9 9m-3-3 3-3m-6 0 3-3\"/>", "<path d=\"M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>", "<path d=\"M12 14V22m0-4c-5 0-6-3-6-3s5-1 6 3m0-1c5 0 6-3 6-3s-5-1-6 3M8 12C1 10 5 4 8 5 8 0 16 0 16 5c5-2 7 6 2 7-2 4-8 4-10 0Z\"/><path d=\"M8 7c4-3 9 0 7 3-3 3-7 0-4-2\"/>", "<path d=\"m13 2-9 12h7l-1 8 10-13h-7l1-7Z\"/>", "<path d=\"m3 6 4 4 5-7 5 7 4-4-2 13H5L3 6Zm2 10h14\"/>", "<ellipse cx=\"12\" cy=\"8\" rx=\"6\" ry=\"7\"/><path d=\"M10 15v7h4v-7M9 8l4-4m-2 8 4-4\"/>", "<path d=\"M8 10h8v12H8Zm4-8c-5 5 0 8 2 5 1-2-2-5-2-5ZM6 22h12M12 8v2\"/>", "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 5v7l4 3M12 3v1m9 8h-1M12 21v-1M3 12h1\"/>", "<path d=\"m12 2 3 6 7 1-5 5 1 8-6-4-6 4 1-8-5-5 7-1 3-6Z\"/>", "<path d=\"M12 21 3 12C-3 4 7-1 12 6c5-7 15-2 9 6l-9 9Z\"/>", "<path d=\"m2 11 10-9 10 9M5 9v13h14V9M10 22v-8h4v8\"/>", "<path d=\"m12 2-6 7h3l-5 6h5l-5 4h16l-5-4h5l-5-6h3l-6-7ZM12 19v4\"/>", "<circle cx=\"12\" cy=\"15\" r=\"7\"/><path d=\"m8 4 2-3h4l2 3-4 5-4-5ZM8 4h8\"/>", "<path d=\"M7 12V6a1.5 1.5 0 0 1 3 0v5-8a1.5 1.5 0 0 1 3 0v8-7a1.5 1.5 0 0 1 3 0v8-5a1.5 1.5 0 0 1 3 0v9c0 8-10 9-13 3l-3-6c-1-3 1-4 3-2l1 1Z\"/>", "<path d=\"M7 17C0 13 3 2 12 2s12 11 5 15v5H7v-5Z\"/><circle cx=\"8\" cy=\"11\" r=\"2\"/><circle cx=\"16\" cy=\"11\" r=\"2\"/><path d=\"m12 14-1 3h2l-1-3ZM10 19v3m4-3v3\"/>"];
+function icon(id){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICONS[id]+'</svg>';}
 const $=id=>document.getElementById(id);
 const screens=[...document.querySelectorAll(".screen")];
 let rounds=[],roundIndex=0,answerValue=0,locked=false,audio=null;
-function show(id){screens.forEach(s=>s.classList.toggle("active",s.id===id));}
+let current="home",timers=[];
+function later(fn,ms){timers.push(setTimeout(fn,ms));}
+function clearTimers(){timers.forEach(clearTimeout);timers=[];}
+function show(id){current=id;screens.forEach(s=>{s.classList.toggle("active",s.id===id);s.inert=s.id!==id;s.setAttribute("aria-hidden",s.id!==id);});}
+show("home");
 function shuffle(a){const x=a.slice();for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]];}return x;}
-function card(item){return '<div class="symbol"><div class="glyph">'+item.glyph+'</div><div class="name">'+item.name+'</div></div>';}
+function card(item){return '<div class="symbol"><div class="glyph">'+icon(item.id)+'</div><div class="name">'+item.name+'</div></div>';}
 function haptic(ms=18){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
 function sound(freq=520,dur=.18){
   try{
@@ -163,7 +183,7 @@ function sound(freq=520,dur=.18){
   }catch(e){}
 }
 function begin(){
-  answerValue=0;roundIndex=0;locked=false;
+  clearTimers();answerValue=0;roundIndex=0;locked=false;
   rounds=shuffle([0,1,2,3]);
   $("allSymbols").innerHTML=shuffle(ITEMS).map(card).join("");
   show("choose"); sound(380,.12);
@@ -174,33 +194,33 @@ function renderRound(){
   $("roundSymbols").innerHTML=subset.map(card).join("");
   $("roundLabel").textContent="VISIONE "+(roundIndex+1)+" DI 4";
   $("progressBar").style.width=((roundIndex+1)*25)+"%";
-  locked=false;show("round");
+  locked=true;show("round");document.querySelectorAll("[data-answer]").forEach(b=>b.disabled=true);later(()=>{locked=false;document.querySelectorAll("[data-answer]").forEach(b=>b.disabled=false);},450);
 }
 function answer(yes){
-  if(locked)return;locked=true;haptic();sound(yes?610:430,.11);
+  if(locked||current!=="round")return;locked=true;document.querySelectorAll("[data-answer]").forEach(b=>b.disabled=true);haptic();sound(yes?610:430,.11);
   const bit=rounds[roundIndex]; if(yes) answerValue|=(1<<bit);
   roundIndex++;
-  if(roundIndex<4){setTimeout(renderRound,260)}else{setTimeout(focus,320)}
+  if(roundIndex<4){later(renderRound,200)}else{later(focus,200)}
 }
 function focus(){
   show("focus");haptic(28);sound(320,.22);
   const text=$("focusText");
-  text.textContent="Sto separando le immagini...";
-  setTimeout(()=>text.textContent="Una continua a tornare...",950);
-  setTimeout(()=>text.textContent="Adesso la vedo.",1900);
-  setTimeout(reveal,2800);
+  text.textContent="Morris si concentra...";later(()=>text.textContent="Sto separando le immagini...",600);
+  later(()=>text.textContent="Una continua a tornare...",950);
+  later(()=>text.textContent="Adesso la vedo.",1900);
+  later(reveal,3000);
 }
 function reveal(){
   const item=ITEMS.find(x=>x.id===answerValue)||ITEMS[0];
-  $("resultGlyph").textContent=item.glyph;$("resultName").textContent=item.name;
+  $("resultGlyph").innerHTML=icon(item.id);$("resultName").textContent=item.name;
   show("result");haptic(35);sound(760,.42);
 }
 $("start").addEventListener("click",begin);
-$("chosen").addEventListener("click",()=>{roundIndex=0;answerValue=0;renderRound();});
+$("chosen").addEventListener("click",()=>{if(current!=="choose")return;roundIndex=0;answerValue=0;renderRound();});
 document.querySelectorAll("[data-answer]").forEach(b=>b.addEventListener("click",()=>answer(b.dataset.answer==="1")));
 $("again").addEventListener("click",begin);
-$("homeBack").addEventListener("click",()=>show("home"));
-$("resultHome").addEventListener("click",()=>show("home"));
+$("homeBack").addEventListener("click",()=>{clearTimers();show("home");});
+$("resultHome").addEventListener("click",()=>{clearTimers();show("home");});
 document.addEventListener("contextmenu",e=>e.preventDefault());
 document.addEventListener("gesturestart",e=>e.preventDefault());
 })();
