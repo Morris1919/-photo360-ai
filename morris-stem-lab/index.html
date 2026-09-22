@@ -75,8 +75,9 @@
       <div class="workspace-actions">
         <button id="addTrackBtn">＋ AGGIUNGI TRACCIA</button>
         <input id="extraFile" type="file" accept="audio/*" hidden />
-        <button id="saveProjectBtn">SALVA PROGETTO</button>
-        <button id="projectsBtn">I MIEI PROGETTI</button>
+        <button id="saveProjectBtn">💾 SALVA PROGETTO SU PC</button>
+        <button id="openProjectBtn">📂 APRI PROGETTO</button>
+        <input id="projectFile" type="file" accept=".morrisstem,application/x-morrisstem,application/octet-stream" hidden />
         <button id="exportBtn" class="primary">ESPORTA REMIX WAV</button>
       </div>
 
@@ -124,11 +125,7 @@
     </section>
   </main>
 
-  <dialog id="projectsDialog">
-    <div class="dialog-head"><h3>I miei progetti</h3><button id="closeProjects">✕</button></div>
-    <p>I progetti restano nel browser. Cancellando i dati del sito, vengono rimossi.</p>
-    <div id="projectsList"></div>
-  </dialog>
+
 
   <template id="trackTemplate">
     <article class="channel">
