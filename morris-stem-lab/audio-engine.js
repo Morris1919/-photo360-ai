@@ -1,5 +1,6 @@
 export const defaultSettings=()=>({
-  volume:1,pan:0,mute:false,solo:false,low:0,mid:0,high:0,comp:.25,delay:0,reverb:0,flanger:0
+  volume:1,pan:0,mute:false,solo:false,low:0,mid:0,high:0,comp:.25,
+  chorus:0,flanger:0,phaser:0,drive:0,delay:0,reverb:0
 });
 
 function makeImpulse(ctx,seconds=2.1,decay=2.7){
@@ -93,6 +94,15 @@ function scheduleKeyboard(ctx,dest,kb,offset,totalDuration,baseWhen=0){
   return nodes;
 }
 
+function makeDriveCurve(){
+  const n=4096,curve=new Float32Array(n),k=18;
+  for(let i=0;i<n;i++){
+    const x=i*2/n-1;
+    curve[i]=((1+k)*x)/(1+k*Math.abs(x));
+  }
+  return curve;
+}
+
 function buildTrackGraph(ctx,master,settings,impulse,offline=false){
   const input=ctx.createGain();
   const low=ctx.createBiquadFilter(); low.type='lowshelf';low.frequency.value=120;
@@ -113,13 +123,43 @@ function buildTrackGraph(ctx,master,settings,impulse,offline=false){
   convolver.buffer=impulse; revWet.gain.value=1;
   pan.connect(revSend).connect(convolver).connect(revWet).connect(master);
 
-  const flSend=ctx.createGain(),flDelay=ctx.createDelay(.05),flWet=ctx.createGain();
-  flDelay.delayTime.value=.005; flWet.gain.value=1;
+  // CHORUS, parallel modulated short delay.
+  const chorusSend=ctx.createGain(),chorusDelay=ctx.createDelay(.06),chorusWet=ctx.createGain();
+  chorusDelay.delayTime.value=.018; chorusWet.gain.value=.9;
+  pan.connect(chorusSend).connect(chorusDelay).connect(chorusWet).connect(master);
+  const chorusLfo=ctx.createOscillator(),chorusDepth=ctx.createGain();
+  chorusLfo.frequency.value=.78; chorusDepth.gain.value=.0055;
+  chorusLfo.connect(chorusDepth).connect(chorusDelay.delayTime); chorusLfo.start(0);
+
+  // FLANGER, shorter delay and slower modulation.
+  const flSend=ctx.createGain(),flDelay=ctx.createDelay(.05),flWet=ctx.createGain(),flFeedback=ctx.createGain();
+  flDelay.delayTime.value=.0045; flWet.gain.value=.9; flFeedback.gain.value=.18;
   pan.connect(flSend).connect(flDelay).connect(flWet).connect(master);
-  const lfo=ctx.createOscillator(),depth=ctx.createGain(); lfo.frequency.value=.22;depth.gain.value=.003;
+  flDelay.connect(flFeedback).connect(flDelay);
+  const lfo=ctx.createOscillator(),depth=ctx.createGain(); lfo.frequency.value=.24;depth.gain.value=.0035;
   lfo.connect(depth).connect(flDelay.delayTime); lfo.start(0);
 
-  const n={input,low,mid,high,comp,level,pan,dry,delaySend,delay,feedback,delayWet,revSend,convolver,revWet,flSend,flDelay,flWet,lfo,depth};
+  // PHASER, two modulated all-pass stages.
+  const phaseSend=ctx.createGain(),phase1=ctx.createBiquadFilter(),phase2=ctx.createBiquadFilter(),phaseWet=ctx.createGain();
+  phase1.type='allpass';phase1.frequency.value=650;phase1.Q.value=.8;
+  phase2.type='allpass';phase2.frequency.value=1450;phase2.Q.value=.8;phaseWet.gain.value=.8;
+  pan.connect(phaseSend).connect(phase1).connect(phase2).connect(phaseWet).connect(master);
+  const phaseLfo=ctx.createOscillator(),phaseDepth1=ctx.createGain(),phaseDepth2=ctx.createGain();
+  phaseLfo.frequency.value=.34;phaseDepth1.gain.value=420;phaseDepth2.gain.value=820;
+  phaseLfo.connect(phaseDepth1).connect(phase1.frequency);
+  phaseLfo.connect(phaseDepth2).connect(phase2.frequency);phaseLfo.start(0);
+
+  // DRIVE/SATURATION, parallel so the knob behaves as a wet amount.
+  const driveSend=ctx.createGain(),shaper=ctx.createWaveShaper(),driveWet=ctx.createGain();
+  shaper.curve=makeDriveCurve();shaper.oversample='2x';driveWet.gain.value=.75;
+  pan.connect(driveSend).connect(shaper).connect(driveWet).connect(master);
+
+  const n={input,low,mid,high,comp,level,pan,dry,
+    delaySend,delay,feedback,delayWet,revSend,convolver,revWet,
+    chorusSend,chorusDelay,chorusWet,chorusLfo,chorusDepth,
+    flSend,flDelay,flWet,flFeedback,lfo,depth,
+    phaseSend,phase1,phase2,phaseWet,phaseLfo,phaseDepth1,phaseDepth2,
+    driveSend,shaper,driveWet};
   applyNodes(n,settings,1,false,false);
   return n;
 }
@@ -130,9 +170,12 @@ function applyNodes(n,s,volumeMultiplier=1,mute=false,soloMuted=false){
   n.comp.threshold.value=-6-ca*34;n.comp.ratio.value=1+ca*7;n.comp.attack.value=.006;n.comp.release.value=.18;
   n.pan.pan.value=Math.max(-1,Math.min(1,Number(s.pan)||0));
   n.level.gain.value=(mute||soloMuted)?0:(Number(s.volume)||0)*volumeMultiplier;
+  n.chorusSend.gain.value=Math.max(0,Number(s.chorus)||0);
+  n.flSend.gain.value=Math.max(0,Number(s.flanger)||0);
+  n.phaseSend.gain.value=Math.max(0,Number(s.phaser)||0);
+  n.driveSend.gain.value=Math.max(0,Number(s.drive)||0);
   n.delaySend.gain.value=Math.max(0,Number(s.delay)||0);
   n.revSend.gain.value=Math.max(0,Number(s.reverb)||0);
-  n.flSend.gain.value=Math.max(0,Number(s.flanger)||0);
 }
 
 export class MixerEngine{
@@ -151,7 +194,9 @@ export class MixerEngine{
     this.tracks.push(t);this.duration=Math.max(this.duration,buffer.duration);this.refreshSolo();return t;
   }
   clear(){
-    this.stop();for(const t of this.tracks){try{t.nodes.lfo.stop()}catch{}}
+    this.stop();for(const t of this.tracks){
+      for(const mod of [t.nodes.lfo,t.nodes.chorusLfo,t.nodes.phaseLfo]){try{mod?.stop()}catch{}}
+    }
     this.tracks=[];this.duration=0;
   }
   update(track,patch){
