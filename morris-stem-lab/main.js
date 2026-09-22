@@ -10,12 +10,12 @@ const els={
   separateBtn:$('#separateBtn'),progressBox:$('#progressBox'),progressTitle:$('#progressTitle'),progressPct:$('#progressPct'),progressBar:$('#progressBar'),progressDetail:$('#progressDetail'),statusBox:$('#statusBox'),
   workspace:$('#workspace'),mixer:$('#mixer'),playBtn:$('#playBtn'),pauseBtn:$('#pauseBtn'),stopBtn:$('#stopBtn'),seek:$('#seek'),timeNow:$('#timeNow'),timeTotal:$('#timeTotal'),
   masterVolume:$('#masterVolume'),addTrackBtn:$('#addTrackBtn'),extraFile:$('#extraFile'),saveProjectBtn:$('#saveProjectBtn'),projectsBtn:$('#projectsBtn'),exportBtn:$('#exportBtn'),
-  keyboardEnabled:$('#keyboardEnabled'),bpmInput:$('#bpmInput'),keyboardStyle:$('#keyboardStyle'),keyboardIntensity:$('#keyboardIntensity'),keyboardHumanize:$('#keyboardHumanize'),
+  keyboardEnabled:$('#keyboardEnabled'),bpmInput:$('#bpmInput'),keyboardStyle:$('#keyboardStyle'),keyboardIntensity:$('#keyboardIntensity'),keyboardHumanize:$('#keyboardHumanize'),keyboardSync:$('#keyboardSync'),syncValue:$('#syncValue'),previewKeysBtn:$('#previewKeysBtn'),
   chordsInput:$('#chordsInput'),analyzeBtn:$('#analyzeBtn'),analysisNote:$('#analysisNote'),projectsDialog:$('#projectsDialog'),closeProjects:$('#closeProjects'),projectsList:$('#projectsList'),
   trackTemplate:$('#trackTemplate')
 };
 
-let ctx=null,mixer=null,sourceBuffer=null,sourceFileName='',processor=null,currentProjectId=null,raf=0,keyboardGridOffset=0;
+let ctx=null,mixer=null,sourceBuffer=null,sourceFileName='',processor=null,currentProjectId=null,raf=0,keyboardGridOffset=0,keyboardSyncOffset=0;
 const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
 
 function formatTime(v){v=Math.max(0,Number(v)||0);const m=Math.floor(v/60),s=Math.floor(v%60);return m+':'+String(s).padStart(2,'0');}
@@ -187,9 +187,18 @@ els.extraFile.addEventListener('change',async e=>{
 
 function parseChords(){return els.chordsInput.value.split(/[|,\n]+/).map(s=>s.trim()).filter(Boolean);}
 function syncKeyboard(){
-  if(!mixer)return;mixer.setKeyboard({enabled:els.keyboardEnabled.checked,bpm:Number(els.bpmInput.value)||120,style:els.keyboardStyle.value,intensity:Number(els.keyboardIntensity.value),humanize:Number(els.keyboardHumanize.value),gridOffset:keyboardGridOffset,chords:parseChords()});
+  if(!mixer)return;mixer.setKeyboard({enabled:els.keyboardEnabled.checked,bpm:Number(els.bpmInput.value)||120,style:els.keyboardStyle.value,intensity:Number(els.keyboardIntensity.value),humanize:Number(els.keyboardHumanize.value),gridOffset:keyboardGridOffset,syncOffset:keyboardSyncOffset,chords:parseChords()});
 }
 [els.keyboardEnabled,els.bpmInput,els.keyboardStyle,els.keyboardIntensity,els.keyboardHumanize,els.chordsInput].forEach(el=>el.addEventListener('input',syncKeyboard));
+els.keyboardSync.addEventListener('input',()=>{
+  keyboardSyncOffset=Number(els.keyboardSync.value)||0;
+  els.syncValue.textContent=Math.round(keyboardSyncOffset*1000)+' ms';
+  syncKeyboard();
+});
+els.previewKeysBtn.addEventListener('click',async()=>{
+  ensureCtx();syncKeyboard();els.previewKeysBtn.disabled=true;els.previewKeysBtn.textContent='CARICO SUONO…';
+  try{await mixer.previewKeyboard();}finally{els.previewKeysBtn.disabled=false;els.previewKeysBtn.textContent='PROVA SUONO';}
+});
 
 async function runAnalysis(auto=false){
   if(!sourceBuffer){if(!auto)status('Per analizzare armonia e BPM serve il brano originale.',true);return;}
@@ -222,7 +231,7 @@ els.saveProjectBtn.addEventListener('click',async()=>{
     progress('Salvo progetto',10,'Scrivo stem e impostazioni nella memoria del browser…');
     const id=currentProjectId||crypto.randomUUID(),now=Date.now();
     const rec={id,name:baseName(sourceFileName||'Morris Stem Project'),updatedAt:now,duration:mixer.duration,master:Number(els.masterVolume.value),
-      keyboard:{enabled:els.keyboardEnabled.checked,bpm:Number(els.bpmInput.value),style:els.keyboardStyle.value,intensity:Number(els.keyboardIntensity.value),humanize:Number(els.keyboardHumanize.value),gridOffset:keyboardGridOffset,chords:parseChords()},
+      keyboard:{enabled:els.keyboardEnabled.checked,bpm:Number(els.bpmInput.value),style:els.keyboardStyle.value,intensity:Number(els.keyboardIntensity.value),humanize:Number(els.keyboardHumanize.value),gridOffset:keyboardGridOffset,syncOffset:keyboardSyncOffset,chords:parseChords()},
       tracks:mixer.tracks.map(t=>({name:t.name,kind:t.kind,settings:{...t.settings},audio:serializeBuffer(t.buffer)}))};
     await saveProject(rec);currentProjectId=id;progress('Progetto salvato',100,'Resta su questo dispositivo.');setTimeout(hideProgress,700);status('Progetto salvato nel browser.');
   }catch(e){hideProgress();status('Salvataggio non riuscito, probabilmente per spazio locale insufficiente: '+(e?.message||e),true);}
@@ -251,7 +260,7 @@ async function openProject(id){
     ensureCtx();mixer.clear();els.mixer.innerHTML='';
     for(const tr of rec.tracks){const b=deserializeBuffer(ctx,tr.audio);addTrackUI(mixer.addTrack(tr.name,b,tr.kind,tr.settings));}
     currentProjectId=id;sourceFileName=rec.name;sourceBuffer=null;els.masterVolume.value=rec.master??.9;mixer.setMaster(els.masterVolume.value);
-    const k=rec.keyboard||{};keyboardGridOffset=Number(k.gridOffset)||0;els.keyboardEnabled.checked=!!k.enabled;els.bpmInput.value=k.bpm||120;els.keyboardStyle.value=k.style||'Pad';els.keyboardIntensity.value=k.intensity??.38;els.keyboardHumanize.value=k.humanize??.015;els.chordsInput.value=(k.chords||[]).join(' | ');syncKeyboard();
+    const k=rec.keyboard||{};keyboardGridOffset=Number(k.gridOffset)||0;keyboardSyncOffset=Number(k.syncOffset)||0;els.keyboardSync.value=keyboardSyncOffset;els.syncValue.textContent=Math.round(keyboardSyncOffset*1000)+' ms';els.keyboardEnabled.checked=!!k.enabled;els.bpmInput.value=k.bpm||120;els.keyboardStyle.value=k.style||'Pad';els.keyboardIntensity.value=k.intensity??.38;els.keyboardHumanize.value=k.humanize??.015;els.chordsInput.value=(k.chords||[]).join(' | ');syncKeyboard();
     showWorkspace();els.projectsDialog.close();progress('Progetto aperto',100,'Pronto.');setTimeout(hideProgress,600);
   }catch(e){hideProgress();status('Non riesco ad aprire il progetto: '+(e?.message||e),true);}
 }
