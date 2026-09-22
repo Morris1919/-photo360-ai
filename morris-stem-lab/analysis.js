@@ -44,8 +44,31 @@ export async function detectTempo(buffer,onProgress=()=>{}){
   // Prefer a musically plausible half/double relation when scores are close.
   if(bestBpm>150) bestBpm=Math.round(bestBpm/2);
   if(bestBpm<70 && bestBpm*2<=180) bestBpm*=2;
+
+  // Find the actual beat phase instead of assuming the song starts on beat 1 at 0:00.
+  const beatLag=Math.max(1,Math.round(fps*60/bestBpm));
+  let bestPhase=0,bestPhaseScore=-Infinity;
+  for(let phase=0;phase<beatLag;phase++){
+    let s=0,count=0;
+    for(let i=phase;i<env.length;i+=beatLag){s+=env[i];count++;}
+    s/=Math.max(1,count);
+    if(s>bestPhaseScore){bestPhaseScore=s;bestPhase=phase;}
+  }
+  const beatOffset=bestPhase/fps;
+
+  // Estimate bar downbeat among four beat positions using transient strength.
+  let bestBarBeat=0,bestBarScore=-Infinity;
+  for(let q=0;q<4;q++){
+    let s=0,count=0;
+    for(let i=bestPhase+q*beatLag;i<env.length;i+=beatLag*4){s+=env[i];count++;}
+    s/=Math.max(1,count);
+    if(s>bestBarScore){bestBarScore=s;bestBarBeat=q;}
+  }
+  const beatSec=60/bestBpm;
+  const barOffset=beatOffset+bestBarBeat*beatSec;
+
   onProgress(.5);
-  return {bpm:Math.round(bestBpm),confidence:Math.max(0,Math.min(1,best))};
+  return {bpm:Math.round(bestBpm),confidence:Math.max(0,Math.min(1,best)),beatOffset,barOffset};
 }
 
 function chordFromChroma(chroma){
@@ -98,14 +121,15 @@ function accumulateChroma(buffer,startSample,endSample){
   return chroma;
 }
 
-export async function detectChords(buffer,bpm,onProgress=()=>{}){
+export async function detectChords(buffer,bpm,onProgress=()=>{},barOffset=0){
   const barSec=240/Math.max(50,Math.min(220,bpm||120));
-  const bars=Math.min(64,Math.max(1,Math.floor(buffer.duration/barSec)));
+  const startOffset=Math.max(0,Math.min(buffer.duration-.01,Number(barOffset)||0));
+  const bars=Math.min(96,Math.max(1,Math.floor((buffer.duration-startOffset)/barSec)));
   const chords=[];
   let last='';
   for(let b=0;b<bars;b++){
-    const s=Math.floor(b*barSec*buffer.sampleRate);
-    const e=Math.min(buffer.length,Math.floor((b+1)*barSec*buffer.sampleRate));
+    const s=Math.floor((startOffset+b*barSec)*buffer.sampleRate);
+    const e=Math.min(buffer.length,Math.floor((startOffset+(b+1)*barSec)*buffer.sampleRate));
     const c=chordFromChroma(accumulateChroma(buffer,s,e)).name;
     chords.push(c||last||'C');
     last=c||last;
@@ -115,8 +139,14 @@ export async function detectChords(buffer,bpm,onProgress=()=>{}){
   return chords;
 }
 
-export async function analyzeMusic(buffer,onProgress=()=>{}){
-  const tempo=await detectTempo(buffer,onProgress);
-  const chords=await detectChords(buffer,tempo.bpm,onProgress);
-  return {bpm:tempo.bpm,tempoConfidence:tempo.confidence,chords};
+export async function analyzeMusic(rhythmBuffer,harmonyBuffer=rhythmBuffer,onProgress=()=>{}){
+  const tempo=await detectTempo(rhythmBuffer,onProgress);
+  const chords=await detectChords(harmonyBuffer,tempo.bpm,onProgress,tempo.barOffset);
+  return {
+    bpm:tempo.bpm,
+    tempoConfidence:tempo.confidence,
+    beatOffset:tempo.beatOffset,
+    barOffset:tempo.barOffset,
+    chords
+  };
 }
