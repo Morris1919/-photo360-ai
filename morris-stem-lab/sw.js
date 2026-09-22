@@ -1,4 +1,4 @@
-const CACHE='morris-stem-lab-v3';
+const CACHE='morris-stem-lab-v4';
 const ASSETS=['./','./index.html','./styles.css','./main.js','./audio-engine.js','./analysis.js','./storage.js','./lib/demucs-web/index.js','./lib/demucs-web/constants.js','./lib/demucs-web/fft.js','./lib/demucs-web/processor.js'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(Promise.all([
