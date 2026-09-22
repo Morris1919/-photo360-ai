@@ -31,55 +31,91 @@ function chordNotes(name){
 }
 const midiHz=m=>440*Math.pow(2,(m-69)/12);
 
-function scheduleInstrument(ctx,dest,midi,start,duration,volume,style='Pad'){
+
+const PIANO_SAMPLE_URLS=[
+  {midi:48,url:'https://tonejs.github.io/audio/salamander/C3.mp3'},
+  {midi:57,url:'https://tonejs.github.io/audio/salamander/A3.mp3'},
+  {midi:60,url:'https://tonejs.github.io/audio/salamander/C4.mp3'},
+  {midi:69,url:'https://tonejs.github.io/audio/salamander/A4.mp3'},
+  {midi:72,url:'https://tonejs.github.io/audio/salamander/C5.mp3'}
+];
+const pianoCache=new WeakMap();
+async function loadPianoSamples(ctx){
+  if(pianoCache.has(ctx)) return pianoCache.get(ctx);
+  const promise=Promise.all(PIANO_SAMPLE_URLS.map(async s=>{
+    const r=await fetch(s.url,{mode:'cors'});
+    if(!r.ok) throw new Error('sample piano '+r.status);
+    const b=await ctx.decodeAudioData(await r.arrayBuffer());
+    return {midi:s.midi,buffer:b};
+  }));
+  pianoCache.set(ctx,promise);
+  return promise;
+}
+function nearestSample(samples,midi){
+  let best=samples[0];
+  for(const s of samples) if(Math.abs(s.midi-midi)<Math.abs(best.midi-midi)) best=s;
+  return best;
+}
+function scheduleSample(ctx,dest,midi,start,duration,volume,style,samples){
+  if(!samples?.length) return [];
   if(start<ctx.currentTime-.02 && !(ctx instanceof OfflineAudioContext)) return [];
-  const nodes=[];
-  const a=Math.max(start,ctx.currentTime||0), dur=Math.max(.05,duration), end=a+dur;
-  const bus=ctx.createGain(),filter=ctx.createBiquadFilter();
-  bus.connect(filter).connect(dest);nodes.push(bus,filter);
-
-  let attack=.01,release=.15,peak=Math.max(.0003,volume),filterHz=6000;
-  if(style==='Pad'){attack=.22;release=.45;filterHz=1800;}
-  if(style==='Piano'){attack=.004;release=.18;filterHz=5200;}
-  if(style==='Rhodes'){attack=.012;release=.4;filterHz=3200;}
-  if(style==='Synth'){attack=.006;release=.12;filterHz=2400;}
-  if(style==='Arpeggio'){attack=.004;release=.09;filterHz=4200;}
-  filter.type='lowpass';filter.frequency.setValueAtTime(filterHz,a);filter.Q.value=style==='Synth'?5:.7;
-
-  bus.gain.setValueAtTime(.0001,a);
-  bus.gain.exponentialRampToValueAtTime(peak,a+Math.min(attack,dur*.3));
-  if(style==='Piano'||style==='Rhodes'||style==='Arpeggio'){
-    bus.gain.exponentialRampToValueAtTime(Math.max(.0002,peak*.35),a+Math.min(dur*.45,.28));
-  }
-  bus.gain.setValueAtTime(Math.max(.0002,peak*(style==='Pad'?0.85:0.28)),Math.max(a+attack,end-release));
-  bus.gain.exponentialRampToValueAtTime(.0001,end);
-
-  const addOsc=(type,ratio=1,detune=0,gain=1)=>{
-    const o=ctx.createOscillator(),g=ctx.createGain();
-    o.type=type;o.frequency.value=midiHz(midi)*ratio;o.detune.value=detune;g.gain.value=gain;
-    o.connect(g).connect(bus);o.start(a);o.stop(end+.04);nodes.push(o,g);
-  };
-
-  if(style==='Pad'){
-    addOsc('sawtooth',1,-7,.32);addOsc('sawtooth',1,7,.32);addOsc('triangle',.5,0,.22);
-  }else if(style==='Piano'){
-    addOsc('triangle',1,0,.72);addOsc('sine',2,0,.22);addOsc('sine',3,0,.08);
-  }else if(style==='Rhodes'){
-    addOsc('sine',1,0,.8);addOsc('sine',2,0,.24);addOsc('triangle',.5,0,.12);
-  }else if(style==='Synth'){
-    addOsc('sawtooth',1,-4,.48);addOsc('square',1,4,.24);addOsc('sawtooth',.5,0,.18);
-  }else{
-    addOsc('triangle',1,0,.68);addOsc('square',2,0,.12);
+  const smp=nearestSample(samples,midi);
+  const src=ctx.createBufferSource(),g=ctx.createGain(),filter=ctx.createBiquadFilter();
+  src.buffer=smp.buffer;src.playbackRate.value=Math.pow(2,(midi-smp.midi)/12);
+  const a=Math.max(start,ctx.currentTime||0),dur=Math.max(.08,duration),end=a+dur;
+  filter.type='lowpass';filter.frequency.value=style==='Rhodes'?2600:6500;
+  src.connect(filter).connect(g).connect(dest);
+  const peak=Math.max(.0003,volume);
+  g.gain.setValueAtTime(.0001,a);g.gain.exponentialRampToValueAtTime(peak,a+.006);
+  g.gain.exponentialRampToValueAtTime(style==='Rhodes'?peak*.32:peak*.18,a+Math.min(.34,dur*.55));
+  g.gain.exponentialRampToValueAtTime(.0001,end);
+  src.start(a,0);src.stop(end+.08);
+  const nodes=[src,g,filter];
+  if(style==='Rhodes'){
+    const trem=ctx.createOscillator(),tg=ctx.createGain();
+    trem.frequency.value=4.8;tg.gain.value=peak*.12;
+    trem.connect(tg).connect(g.gain);trem.start(a);trem.stop(end+.08);nodes.push(trem,tg);
   }
   return nodes;
 }
 
-function scheduleKeyboard(ctx,dest,kb,offset,totalDuration,baseWhen=0){
+function scheduleInstrument(ctx,dest,midi,start,duration,volume,style='Pad',samples=null){
+  if((style==='Piano'||style==='Rhodes'||style==='Arpeggio')&&samples?.length){
+    return scheduleSample(ctx,dest,midi,start,duration,volume,style==='Rhodes'?'Rhodes':'Piano',samples);
+  }
+  if(start<ctx.currentTime-.02 && !(ctx instanceof OfflineAudioContext)) return [];
+  const nodes=[],a=Math.max(start,ctx.currentTime||0),dur=Math.max(.05,duration),end=a+dur;
+  const bus=ctx.createGain(),filter=ctx.createBiquadFilter();bus.connect(filter).connect(dest);nodes.push(bus,filter);
+  const peak=Math.max(.0003,volume);
+  let attack=.01,release=.14,sustain=.28,filterHz=4500,q=.8;
+  if(style==='Pad'){attack=.28;release=.52;sustain=.82;filterHz=1550;q=.6;}
+  if(style==='Hammond'){attack=.006;release=.08;sustain=.92;filterHz=5200;q=.4;}
+  if(style==='Synth'){attack=.004;release=.12;sustain=.38;filterHz=1900;q=6;}
+  filter.type='lowpass';filter.frequency.value=filterHz;filter.Q.value=q;
+  bus.gain.setValueAtTime(.0001,a);bus.gain.exponentialRampToValueAtTime(peak,a+Math.min(attack,dur*.25));
+  bus.gain.setValueAtTime(Math.max(.0002,peak*sustain),Math.max(a+attack,end-release));
+  bus.gain.exponentialRampToValueAtTime(.0001,end);
+  const addOsc=(type,ratio=1,detune=0,gain=1)=>{
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type=type;o.frequency.value=midiHz(midi)*ratio;o.detune.value=detune;g.gain.value=gain;
+    o.connect(g).connect(bus);o.start(a);o.stop(end+.05);nodes.push(o,g);
+  };
+  if(style==='Pad'){
+    addOsc('sawtooth',1,-9,.24);addOsc('sawtooth',1,9,.24);addOsc('triangle',.5,0,.18);addOsc('sine',2,0,.08);
+  }else if(style==='Hammond'){
+    addOsc('sine',1,0,.42);addOsc('sine',2,0,.25);addOsc('sine',3,0,.17);addOsc('sine',4,0,.10);addOsc('sine',6,0,.06);
+  }else{
+    addOsc('sawtooth',1,-5,.36);addOsc('square',1,5,.18);addOsc('sawtooth',.5,0,.16);
+  }
+  return nodes;
+}
+
+function scheduleKeyboard(ctx,dest,kb,offset,totalDuration,baseWhen=0,samples=null){
   const nodes=[];
   if(!kb?.enabled) return nodes;
   const bpm=Math.max(50,Math.min(220,Number(kb.bpm)||120));
   const bar=240/bpm, beat=60/bpm;
-  const gridOffset=Math.max(0,Number(kb.gridOffset)||0);
+  const gridOffset=Math.max(0,(Number(kb.gridOffset)||0)+(Number(kb.syncOffset)||0));
   const chords=(kb.chords||[]).filter(Boolean);
   if(!chords.length) return nodes;
   const human=Math.max(0,Math.min(.08,Number(kb.humanize)||0));
@@ -94,31 +130,37 @@ function scheduleKeyboard(ctx,dest,kb,offset,totalDuration,baseWhen=0){
     const jitter=()=> (Math.random()-.5)*2*human;
     if(style==='Pad'){
       const start=baseWhen+Math.max(0,relBase)+jitter();
-      for(const n of notes) nodes.push(...scheduleInstrument(ctx,dest,n,start,bar*.95,.055*intensity,'Pad'));
+      for(const n of notes) nodes.push(...scheduleInstrument(ctx,dest,n,start,bar*.95,.055*intensity,'Pad',samples));
     }else if(style==='Piano'){
       for(let q=0;q<4;q++){
         const event=barSec+q*beat; if(event<offset) continue;
         const start=baseWhen+(event-offset)+jitter();
-        for(const n of notes) nodes.push(...scheduleInstrument(ctx,dest,n,start,beat*.56,.050*intensity,'Piano'));
+        for(const n of notes) nodes.push(...scheduleInstrument(ctx,dest,n,start,beat*.56,.055*intensity,'Piano',samples));
       }
     }else if(style==='Rhodes'){
       for(let q=0;q<2;q++){
         const event=barSec+q*beat*2; if(event<offset) continue;
         const start=baseWhen+(event-offset)+jitter();
-        for(const n of notes) nodes.push(...scheduleInstrument(ctx,dest,n,start,beat*1.65,.047*intensity,'Rhodes'));
+        for(const n of notes) nodes.push(...scheduleInstrument(ctx,dest,n,start,beat*1.65,.050*intensity,'Rhodes',samples));
+      }
+    }else if(style==='Hammond'){
+      for(let q=0;q<2;q++){
+        const event=barSec+q*beat*2; if(event<offset) continue;
+        const start=baseWhen+(event-offset)+jitter();
+        for(const n of notes) nodes.push(...scheduleInstrument(ctx,dest,n-12,start,beat*1.9,.038*intensity,'Hammond',samples));
       }
     }else if(style==='Synth'){
       for(let q=0;q<8;q++){
         const event=barSec+q*beat/2; if(event<offset) continue;
         const start=baseWhen+(event-offset)+jitter();
-        for(const n of notes) nodes.push(...scheduleInstrument(ctx,dest,n-12,start,beat*.32,.025*intensity,'Synth'));
+        for(const n of notes) nodes.push(...scheduleInstrument(ctx,dest,n-12,start,beat*.32,.032*intensity,'Synth',samples));
       }
     }else{
       for(let q=0;q<8;q++){
         const event=barSec+q*beat/2; if(event<offset) continue;
         const start=baseWhen+(event-offset)+jitter();
         const n=notes[q%notes.length]+(q>=4?12:0);
-        nodes.push(...scheduleInstrument(ctx,dest,n,start,beat*.40,.042*intensity,'Arpeggio'));
+        nodes.push(...scheduleInstrument(ctx,dest,n,start,beat*.40,.050*intensity,'Arpeggio',samples));
       }
     }
   }
@@ -216,7 +258,7 @@ export class MixerEngine{
     this.limiter.threshold.value=-1.2;this.limiter.knee.value=0;this.limiter.ratio.value=18;this.limiter.attack.value=.002;this.limiter.release.value=.12;
     this.masterInput.connect(this.limiter).connect(this.masterGain).connect(ctx.destination);this.masterGain.gain.value=.9;
     this.impulse=makeImpulse(ctx);
-    this.keyboard={enabled:false,bpm:120,style:'Pad',intensity:.38,humanize:.015,gridOffset:0,chords:[]};
+    this.keyboard={enabled:false,bpm:120,style:'Pad',intensity:.38,humanize:.015,gridOffset:0,syncOffset:0,chords:[]};
   }
   setMaster(v){this.masterGain.gain.value=Math.max(0,Math.min(1.5,Number(v)||0));}
   addTrack(name,buffer,kind='stem',settings=null){
@@ -237,7 +279,33 @@ export class MixerEngine{
     const any=this.tracks.some(t=>t.settings.solo);
     for(const t of this.tracks) applyNodes(t.nodes,t.settings,1,t.settings.mute,any&&!t.settings.solo);
   }
-  setKeyboard(kb){this.keyboard={...this.keyboard,...kb};if(this.playing){const p=this.position();this.seek(p);}}
+  async prepareKeyboard(){
+    try{return await loadPianoSamples(this.ctx);}catch(e){console.warn('Piano samples unavailable',e);return [];}
+  }
+  stopKeyboard(){
+    for(const n of this.keyboardNodes){if(n&&typeof n.stop==='function'){try{n.stop()}catch{}}}
+    this.keyboardNodes=[];
+  }
+  async refreshKeyboard(){
+    this.stopKeyboard();
+    if(!this.playing||!this.keyboard.enabled)return;
+    const p=this.position(),samples=await this.prepareKeyboard();
+    if(!this.playing||!this.keyboard.enabled)return;
+    this.keyboardNodes=scheduleKeyboard(this.ctx,this.masterInput,this.keyboard,p,this.duration,this.ctx.currentTime+.03,samples);
+  }
+  setKeyboard(kb){
+    this.keyboard={...this.keyboard,...kb};
+    if(this.playing)this.refreshKeyboard();
+  }
+  async previewKeyboard(){
+    await this.ctx.resume();
+    const samples=await this.prepareKeyboard();
+    const notes=chordNotes((this.keyboard.chords||[])[0]||'C');
+    const when=this.ctx.currentTime+.03;
+    this.stopKeyboard();
+    this.keyboardNodes=[];
+    for(const n of notes)this.keyboardNodes.push(...scheduleInstrument(this.ctx,this.masterInput,n,when,.9,.07,this.keyboard.style||'Piano',samples));
+  }
   position(){return this.playing?Math.min(this.duration,this.offset+(this.ctx.currentTime-this.startCtx)):this.offset;}
   async play(){
     if(this.playing||!this.tracks.length)return; await this.ctx.resume();
@@ -246,8 +314,11 @@ export class MixerEngine{
     for(const t of this.tracks){
       const s=this.ctx.createBufferSource();s.buffer=t.buffer;s.connect(t.nodes.input);s.start(when,Math.min(this.offset,Math.max(0,t.buffer.duration-.001)));this.sources.push(s);
     }
-    this.keyboardNodes=scheduleKeyboard(this.ctx,this.masterInput,this.keyboard,this.offset,this.duration,when);
     this.playing=true;
+    if(this.keyboard.enabled){
+      const samples=await this.prepareKeyboard();
+      if(this.playing)this.keyboardNodes=scheduleKeyboard(this.ctx,this.masterInput,this.keyboard,this.offset,this.duration,when,samples);
+    }
   }
   pause(){
     if(!this.playing)return;this.offset=this.position();this.stopNodes();this.playing=false;
@@ -255,7 +326,7 @@ export class MixerEngine{
   stop(){this.stopNodes();this.playing=false;this.offset=0;}
   stopNodes(){
     for(const s of this.sources){try{s.stop()}catch{}}this.sources=[];
-    for(const n of this.keyboardNodes){if(n&&typeof n.stop==='function'){try{n.stop()}catch{}}}this.keyboardNodes=[];
+    this.stopKeyboard();
   }
   seek(sec){
     const was=this.playing;if(was){this.offset=this.position();this.stopNodes();this.playing=false;}
@@ -274,7 +345,8 @@ export class MixerEngine{
       applyNodes(n,t.settings,1,t.settings.mute,any&&!t.settings.solo);
       src.connect(n.input);src.start(0);
     }
-    scheduleKeyboard(off,master,this.keyboard,0,this.duration,0);
+    let samples=[];try{samples=await this.prepareKeyboard();}catch{}
+    scheduleKeyboard(off,master,this.keyboard,0,this.duration,0,samples);
     return await off.startRendering();
   }
 }
