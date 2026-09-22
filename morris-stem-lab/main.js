@@ -146,10 +146,18 @@ function addTrackUI(track){
   const node=els.trackTemplate.content.firstElementChild.cloneNode(true);track.el=node;
   node.querySelector('.track-name').textContent=track.name;drawWave(node.querySelector('.waveform'),track.buffer);
   const bind=(cl,key)=>{const i=node.querySelector(cl);i.value=track.settings[key];i.addEventListener('input',()=>mixer.update(track,{[key]:Number(i.value)}));};
-  bind('.vol','volume');bind('.pan','pan');bind('.low','low');bind('.mid','mid');bind('.high','high');bind('.comp','comp');bind('.delay','delay');bind('.reverb','reverb');bind('.flanger','flanger');
+  bind('.vol','volume');bind('.pan','pan');bind('.low','low');bind('.mid','mid');bind('.high','high');bind('.comp','comp');
+  bind('.chorus','chorus');bind('.flanger','flanger');bind('.phaser','phaser');bind('.drive','drive');bind('.delay','delay');bind('.reverb','reverb');
   const mute=node.querySelector('.mute'),solo=node.querySelector('.solo');
   mute.addEventListener('click',()=>{track.settings.mute=!track.settings.mute;mute.classList.toggle('active',track.settings.mute);mixer.refreshSolo();});
   solo.addEventListener('click',()=>{track.settings.solo=!track.settings.solo;solo.classList.toggle('active',track.settings.solo);mixer.refreshSolo();});
+  node.querySelector('.reset-fx').addEventListener('click',()=>{
+    const patch={low:0,mid:0,high:0,comp:.25,chorus:0,flanger:0,phaser:0,drive:0,delay:0,reverb:0};
+    mixer.update(track,patch);
+    for(const [key,val] of Object.entries(patch)){
+      const el=node.querySelector('.'+key);if(el)el.value=val;
+    }
+  });
   node.querySelector('.download-stem').addEventListener('click',()=>downloadBlob(bufferToWavBlob(track.buffer),track.name.toLowerCase().replace(/\s+/g,'-')+'.wav'));
   els.mixer.appendChild(node);
 }
