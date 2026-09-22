@@ -2,16 +2,16 @@ import * as ort from 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/o
 import { DemucsProcessor, CONSTANTS } from './lib/demucs-web/index.js';
 import { MixerEngine, bufferToWavBlob, downloadBlob } from './audio-engine.js';
 import { analyzeMusic } from './analysis.js';
-import { saveProject, listProjects, loadProject, deleteProject, serializeBuffer, deserializeBuffer } from './storage.js';
+import { saveProjectToPC, loadProjectFromFile, deserializeBuffer } from './storage.js';
 
 const $=s=>document.querySelector(s);
 const els={
   engineBadge:$('#engineBadge'),dropZone:$('#dropZone'),fileInput:$('#fileInput'),fileCard:$('#fileCard'),fileName:$('#fileName'),fileMeta:$('#fileMeta'),
   separateBtn:$('#separateBtn'),progressBox:$('#progressBox'),progressTitle:$('#progressTitle'),progressPct:$('#progressPct'),progressBar:$('#progressBar'),progressDetail:$('#progressDetail'),statusBox:$('#statusBox'),
   workspace:$('#workspace'),mixer:$('#mixer'),playBtn:$('#playBtn'),pauseBtn:$('#pauseBtn'),stopBtn:$('#stopBtn'),seek:$('#seek'),timeNow:$('#timeNow'),timeTotal:$('#timeTotal'),
-  masterVolume:$('#masterVolume'),addTrackBtn:$('#addTrackBtn'),extraFile:$('#extraFile'),saveProjectBtn:$('#saveProjectBtn'),projectsBtn:$('#projectsBtn'),exportBtn:$('#exportBtn'),
+  masterVolume:$('#masterVolume'),addTrackBtn:$('#addTrackBtn'),extraFile:$('#extraFile'),saveProjectBtn:$('#saveProjectBtn'),openProjectBtn:$('#openProjectBtn'),projectFile:$('#projectFile'),exportBtn:$('#exportBtn'),
   keyboardEnabled:$('#keyboardEnabled'),bpmInput:$('#bpmInput'),keyboardStyle:$('#keyboardStyle'),keyboardIntensity:$('#keyboardIntensity'),keyboardHumanize:$('#keyboardHumanize'),keyboardSync:$('#keyboardSync'),syncValue:$('#syncValue'),previewKeysBtn:$('#previewKeysBtn'),
-  chordsInput:$('#chordsInput'),analyzeBtn:$('#analyzeBtn'),analysisNote:$('#analysisNote'),projectsDialog:$('#projectsDialog'),closeProjects:$('#closeProjects'),projectsList:$('#projectsList'),
+  chordsInput:$('#chordsInput'),analyzeBtn:$('#analyzeBtn'),analysisNote:$('#analysisNote'),
   trackTemplate:$('#trackTemplate')
 };
 
@@ -224,46 +224,80 @@ els.exportBtn.addEventListener('click',async()=>{
   catch(e){hideProgress();status('Export non riuscito: '+(e?.message||e),true);}finally{els.exportBtn.disabled=false;}
 });
 
+function serializeTrackForProject(t){
+  const channels=[];
+  for(let c=0;c<t.buffer.numberOfChannels;c++)channels.push(new Float32Array(t.buffer.getChannelData(c)));
+  return {
+    name:t.name,kind:t.kind,settings:{...t.settings},
+    audio:{sampleRate:t.buffer.sampleRate,length:t.buffer.length,channels}
+  };
+}
+
+function buildCurrentProjectRecord(){
+  const id=currentProjectId||crypto.randomUUID();
+  return {
+    id,
+    name:baseName(sourceFileName||'Morris Stem Project'),
+    updatedAt:Date.now(),
+    duration:mixer.duration,
+    master:Number(els.masterVolume.value),
+    keyboard:{
+      enabled:els.keyboardEnabled.checked,
+      bpm:Number(els.bpmInput.value),
+      style:els.keyboardStyle.value,
+      intensity:Number(els.keyboardIntensity.value),
+      humanize:Number(els.keyboardHumanize.value),
+      gridOffset:keyboardGridOffset,
+      syncOffset:keyboardSyncOffset,
+      chords:parseChords()
+    },
+    tracks:mixer.tracks.map(serializeTrackForProject)
+  };
+}
+
 els.saveProjectBtn.addEventListener('click',async()=>{
   if(!mixer?.tracks.length)return;
   els.saveProjectBtn.disabled=true;
   try{
-    progress('Salvo progetto',10,'Scrivo stem e impostazioni nella memoria del browser…');
-    const id=currentProjectId||crypto.randomUUID(),now=Date.now();
-    const rec={id,name:baseName(sourceFileName||'Morris Stem Project'),updatedAt:now,duration:mixer.duration,master:Number(els.masterVolume.value),
-      keyboard:{enabled:els.keyboardEnabled.checked,bpm:Number(els.bpmInput.value),style:els.keyboardStyle.value,intensity:Number(els.keyboardIntensity.value),humanize:Number(els.keyboardHumanize.value),gridOffset:keyboardGridOffset,syncOffset:keyboardSyncOffset,chords:parseChords()},
-      tracks:mixer.tracks.map(t=>({name:t.name,kind:t.kind,settings:{...t.settings},audio:serializeBuffer(t.buffer)}))};
-    await saveProject(rec);currentProjectId=id;progress('Progetto salvato',100,'Resta su questo dispositivo.');setTimeout(hideProgress,700);status('Progetto salvato nel browser.');
-  }catch(e){hideProgress();status('Salvataggio non riuscito, probabilmente per spazio locale insufficiente: '+(e?.message||e),true);}
-  finally{els.saveProjectBtn.disabled=false;}
+    const rec=buildCurrentProjectRecord();
+    progress('Preparo il file progetto',3,'Inserisco stem, mixer, effetti e Auto Keys nel file .morrisstem…');
+    const result=await saveProjectToPC(rec,rec.name,p=>progress('Salvo progetto sul PC',5+p*95,'Il file contiene anche gli stem audio: può essere grande.'));
+    currentProjectId=rec.id;
+    progress('Progetto salvato',100,result.filename+' • '+(result.bytes/1048576).toFixed(1)+' MB');
+    status('Progetto salvato sul PC: '+result.filename+'. Non dipende dalla cache del browser.');
+    setTimeout(hideProgress,1200);
+  }catch(e){
+    hideProgress();
+    if(e?.name==='AbortError')status('Salvataggio annullato.');
+    else status('Salvataggio progetto non riuscito: '+(e?.message||e),true);
+  }finally{els.saveProjectBtn.disabled=false;}
 });
 
-async function refreshProjects(){
-  els.projectsList.innerHTML='Carico…';
+els.openProjectBtn.addEventListener('click',()=>els.projectFile.click());
+els.projectFile.addEventListener('change',async e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  els.openProjectBtn.disabled=true;
   try{
-    const ps=await listProjects();els.projectsList.innerHTML='';
-    if(!ps.length){els.projectsList.textContent='Nessun progetto salvato.';return;}
-    for(const p of ps){
-      const row=document.createElement('div');row.className='project-item';
-      const info=document.createElement('div');info.innerHTML='<strong>'+p.name+'</strong><br><small>'+new Date(p.updatedAt).toLocaleString('it-IT')+' • '+formatTime(p.duration)+'</small>';
-      const actions=document.createElement('div');const open=document.createElement('button');open.textContent='APRI';const del=document.createElement('button');del.textContent='ELIMINA';
-      open.onclick=()=>openProject(p.id);del.onclick=async()=>{await deleteProject(p.id);refreshProjects();};actions.append(open,del);row.append(info,actions);els.projectsList.append(row);
-    }
-  }catch(e){els.projectsList.textContent='Errore: '+(e?.message||e);}
-}
-els.projectsBtn.addEventListener('click',async()=>{await refreshProjects();els.projectsDialog.showModal();});
-els.closeProjects.addEventListener('click',()=>els.projectsDialog.close());
-
-async function openProject(id){
-  try{
-    progress('Apro progetto',10,'Ricostruisco le tracce locali…');const rec=await loadProject(id);if(!rec)throw new Error('Progetto non trovato');
+    progress('Apro progetto',3,'Leggo il file dal PC…');
+    const rec=await loadProjectFromFile(file,p=>progress('Apro progetto',5+p*90,'Ricostruisco gli stem audio…'));
     ensureCtx();mixer.clear();els.mixer.innerHTML='';
-    for(const tr of rec.tracks){const b=deserializeBuffer(ctx,tr.audio);addTrackUI(mixer.addTrack(tr.name,b,tr.kind,tr.settings));}
-    currentProjectId=id;sourceFileName=rec.name;sourceBuffer=null;els.masterVolume.value=rec.master??.9;mixer.setMaster(els.masterVolume.value);
-    const k=rec.keyboard||{};keyboardGridOffset=Number(k.gridOffset)||0;keyboardSyncOffset=Number(k.syncOffset)||0;els.keyboardSync.value=keyboardSyncOffset;els.syncValue.textContent=Math.round(keyboardSyncOffset*1000)+' ms';els.keyboardEnabled.checked=!!k.enabled;els.bpmInput.value=k.bpm||120;els.keyboardStyle.value=k.style||'Pad';els.keyboardIntensity.value=k.intensity??.38;els.keyboardHumanize.value=k.humanize??.015;els.chordsInput.value=(k.chords||[]).join(' | ');syncKeyboard();
-    showWorkspace();els.projectsDialog.close();progress('Progetto aperto',100,'Pronto.');setTimeout(hideProgress,600);
-  }catch(e){hideProgress();status('Non riesco ad aprire il progetto: '+(e?.message||e),true);}
-}
+    for(const tr of rec.tracks){
+      const b=deserializeBuffer(ctx,tr.audio);
+      addTrackUI(mixer.addTrack(tr.name,b,tr.kind,tr.settings));
+    }
+    currentProjectId=rec.id||crypto.randomUUID();sourceFileName=rec.name||file.name.replace(/\.morrisstem$/i,'');sourceBuffer=null;
+    els.masterVolume.value=rec.master??.9;mixer.setMaster(els.masterVolume.value);
+    const k=rec.keyboard||{};
+    keyboardGridOffset=Number(k.gridOffset)||0;keyboardSyncOffset=Number(k.syncOffset)||0;
+    els.keyboardSync.value=keyboardSyncOffset;els.syncValue.textContent=Math.round(keyboardSyncOffset*1000)+' ms';
+    els.keyboardEnabled.checked=!!k.enabled;els.bpmInput.value=k.bpm||120;els.keyboardStyle.value=k.style||'Piano';
+    els.keyboardIntensity.value=k.intensity??.38;els.keyboardHumanize.value=k.humanize??.005;
+    els.chordsInput.value=(k.chords||[]).join(' | ');syncKeyboard();
+    showWorkspace();progress('Progetto aperto',100,'Pronto.');setTimeout(hideProgress,700);
+    status('Progetto aperto dal PC: '+file.name);
+  }catch(err){hideProgress();status('Non riesco ad aprire il progetto: '+(err?.message||err),true);}
+  finally{els.openProjectBtn.disabled=false;e.target.value='';}
+});
 
 window.addEventListener('beforeunload',()=>{try{mixer?.stop()}catch{}});
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
