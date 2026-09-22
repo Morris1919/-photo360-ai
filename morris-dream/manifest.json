@@ -1,0 +1,9 @@
+{
+  "name":"Morris Dream",
+  "short_name":"Morris Dream",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#08060a",
+  "theme_color":"#0a070c",
+  "description":"Un esperimento di percezione con Morris."
+}
