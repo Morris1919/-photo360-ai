@@ -110,7 +110,7 @@ function scheduleInstrument(ctx,dest,midi,start,duration,volume,style='Pad',samp
   return nodes;
 }
 
-function scheduleKeyboard(ctx,dest,kb,offset,totalDuration,baseWhen=0,samples=null){
+function scheduleKeyboard(ctx,dest,kb,offset,totalDuration,baseWhen=0,samples=null,windowEnd=totalDuration){
   const nodes=[];
   if(!kb?.enabled) return nodes;
   const bpm=Math.max(50,Math.min(220,Number(kb.bpm)||120));
@@ -121,7 +121,8 @@ function scheduleKeyboard(ctx,dest,kb,offset,totalDuration,baseWhen=0,samples=nu
   const human=Math.max(0,Math.min(.08,Number(kb.humanize)||0));
   const intensity=Math.max(0,Math.min(1,Number(kb.intensity)||.4));
   const firstBar=Math.max(0,Math.floor((offset-gridOffset)/bar));
-  const lastBar=Math.ceil((totalDuration-gridOffset)/bar);
+  const safeEnd=Math.min(totalDuration,Math.max(offset,windowEnd));
+  const lastBar=Math.ceil((safeEnd-gridOffset)/bar);
   const style=kb.style||'Pad';
   for(let bi=firstBar;bi<lastBar;bi++){
     const chord=chords[bi%chords.length], notes=chordNotes(chord);
@@ -129,35 +130,36 @@ function scheduleKeyboard(ctx,dest,kb,offset,totalDuration,baseWhen=0,samples=nu
     const relBase=barSec-offset;
     const jitter=()=> (Math.random()-.5)*2*human;
     if(style==='Pad'){
+      if(barSec<offset || barSec>=safeEnd) continue;
       const start=baseWhen+Math.max(0,relBase)+jitter();
       for(const n of notes) nodes.push(...scheduleInstrument(ctx,dest,n,start,bar*.95,.055*intensity,'Pad',samples));
     }else if(style==='Piano'){
       for(let q=0;q<4;q++){
-        const event=barSec+q*beat; if(event<offset) continue;
+        const event=barSec+q*beat; if(event<offset || event>=safeEnd) continue;
         const start=baseWhen+(event-offset)+jitter();
         for(const n of notes) nodes.push(...scheduleInstrument(ctx,dest,n,start,beat*.56,.055*intensity,'Piano',samples));
       }
     }else if(style==='Rhodes'){
       for(let q=0;q<2;q++){
-        const event=barSec+q*beat*2; if(event<offset) continue;
+        const event=barSec+q*beat*2; if(event<offset || event>=safeEnd) continue;
         const start=baseWhen+(event-offset)+jitter();
         for(const n of notes) nodes.push(...scheduleInstrument(ctx,dest,n,start,beat*1.65,.050*intensity,'Rhodes',samples));
       }
     }else if(style==='Hammond'){
       for(let q=0;q<2;q++){
-        const event=barSec+q*beat*2; if(event<offset) continue;
+        const event=barSec+q*beat*2; if(event<offset || event>=safeEnd) continue;
         const start=baseWhen+(event-offset)+jitter();
         for(const n of notes) nodes.push(...scheduleInstrument(ctx,dest,n-12,start,beat*1.9,.038*intensity,'Hammond',samples));
       }
     }else if(style==='Synth'){
       for(let q=0;q<8;q++){
-        const event=barSec+q*beat/2; if(event<offset) continue;
+        const event=barSec+q*beat/2; if(event<offset || event>=safeEnd) continue;
         const start=baseWhen+(event-offset)+jitter();
         for(const n of notes) nodes.push(...scheduleInstrument(ctx,dest,n-12,start,beat*.32,.032*intensity,'Synth',samples));
       }
     }else{
       for(let q=0;q<8;q++){
-        const event=barSec+q*beat/2; if(event<offset) continue;
+        const event=barSec+q*beat/2; if(event<offset || event>=safeEnd) continue;
         const start=baseWhen+(event-offset)+jitter();
         const n=notes[q%notes.length]+(q>=4?12:0);
         nodes.push(...scheduleInstrument(ctx,dest,n,start,beat*.40,.050*intensity,'Arpeggio',samples));
@@ -257,8 +259,15 @@ export class MixerEngine{
     this.masterInput=ctx.createGain();this.limiter=ctx.createDynamicsCompressor();this.masterGain=ctx.createGain();
     this.limiter.threshold.value=-1.2;this.limiter.knee.value=0;this.limiter.ratio.value=18;this.limiter.attack.value=.002;this.limiter.release.value=.12;
     this.masterInput.connect(this.limiter).connect(this.masterGain).connect(ctx.destination);this.masterGain.gain.value=.9;
+
+    this.keyboardBus=ctx.createGain();
+    this.keyboardComp=ctx.createDynamicsCompressor();
+    this.keyboardBus.gain.value=.22;
+    this.keyboardComp.threshold.value=-10;this.keyboardComp.ratio.value=4;this.keyboardComp.attack.value=.004;this.keyboardComp.release.value=.12;
+    this.keyboardBus.connect(this.keyboardComp).connect(this.masterGain);
     this.impulse=makeImpulse(ctx);
     this.keyboard={enabled:false,bpm:120,style:'Pad',intensity:.38,humanize:.015,gridOffset:0,syncOffset:0,chords:[]};
+    this.keyboardTimer=null;this.keyboardScheduledTo=0;this.keyboardSamples=[];
   }
   setMaster(v){this.masterGain.gain.value=Math.max(0,Math.min(1.5,Number(v)||0));}
   addTrack(name,buffer,kind='stem',settings=null){
@@ -283,19 +292,48 @@ export class MixerEngine{
     try{return await loadPianoSamples(this.ctx);}catch(e){console.warn('Piano samples unavailable',e);return [];}
   }
   stopKeyboard(){
+    if(this.keyboardTimer){clearInterval(this.keyboardTimer);this.keyboardTimer=null;}
     for(const n of this.keyboardNodes){if(n&&typeof n.stop==='function'){try{n.stop()}catch{}}}
-    this.keyboardNodes=[];
+    this.keyboardNodes=[];this.keyboardScheduledTo=0;
+  }
+  async startKeyboardScheduler(){
+    if(!this.playing||!this.keyboard.enabled)return;
+    if(!this.keyboardSamples.length)this.keyboardSamples=await this.prepareKeyboard();
+    if(!this.playing||!this.keyboard.enabled)return;
+    const tick=()=>{
+      if(!this.playing||!this.keyboard.enabled)return;
+      const nowPos=this.position();
+      const from=Math.max(nowPos,this.keyboardScheduledTo||nowPos);
+      const to=Math.min(this.duration,Math.max(from,nowPos+1.25));
+      if(to<=from+.01)return;
+      const when=this.ctx.currentTime+Math.max(.035,from-nowPos);
+      const nodes=scheduleKeyboard(this.ctx,this.keyboardBus,this.keyboard,from,this.duration,when,this.keyboardSamples,to);
+      this.keyboardNodes.push(...nodes);
+      // Drop references to nodes that have certainly finished so the array doesn't grow forever.
+      if(this.keyboardNodes.length>500)this.keyboardNodes=this.keyboardNodes.slice(-250);
+      this.keyboardScheduledTo=to;
+    };
+    this.keyboardScheduledTo=this.position();
+    tick();
+    this.keyboardTimer=setInterval(tick,240);
   }
   async refreshKeyboard(){
-    this.stopKeyboard();
-    if(!this.playing||!this.keyboard.enabled)return;
-    const p=this.position(),samples=await this.prepareKeyboard();
-    if(!this.playing||!this.keyboard.enabled)return;
-    this.keyboardNodes=scheduleKeyboard(this.ctx,this.masterInput,this.keyboard,p,this.duration,this.ctx.currentTime+.03,samples);
+    if(this.keyboardTimer){clearInterval(this.keyboardTimer);this.keyboardTimer=null;}
+    for(const n of this.keyboardNodes){if(n&&typeof n.stop==='function'){try{n.stop()}catch{}}}
+    this.keyboardNodes=[];this.keyboardScheduledTo=this.position();
+    if(this.playing&&this.keyboard.enabled)await this.startKeyboardScheduler();
   }
   setKeyboard(kb){
+    const wasEnabled=!!this.keyboard.enabled;
     this.keyboard={...this.keyboard,...kb};
-    if(this.playing)this.refreshKeyboard();
+    if(!this.playing)return;
+    if(!this.keyboard.enabled){
+      this.stopKeyboard();
+    }else if(!wasEnabled){
+      this.startKeyboardScheduler();
+    }else{
+      this.refreshKeyboard();
+    }
   }
   async previewKeyboard(){
     await this.ctx.resume();
@@ -304,7 +342,7 @@ export class MixerEngine{
     const when=this.ctx.currentTime+.03;
     this.stopKeyboard();
     this.keyboardNodes=[];
-    for(const n of notes)this.keyboardNodes.push(...scheduleInstrument(this.ctx,this.masterInput,n,when,.9,.07,this.keyboard.style||'Piano',samples));
+    for(const n of notes)this.keyboardNodes.push(...scheduleInstrument(this.ctx,this.keyboardBus,n,when,.9,.07,this.keyboard.style||'Piano',samples));
   }
   position(){return this.playing?Math.min(this.duration,this.offset+(this.ctx.currentTime-this.startCtx)):this.offset;}
   async play(){
@@ -315,10 +353,7 @@ export class MixerEngine{
       const s=this.ctx.createBufferSource();s.buffer=t.buffer;s.connect(t.nodes.input);s.start(when,Math.min(this.offset,Math.max(0,t.buffer.duration-.001)));this.sources.push(s);
     }
     this.playing=true;
-    if(this.keyboard.enabled){
-      const samples=await this.prepareKeyboard();
-      if(this.playing)this.keyboardNodes=scheduleKeyboard(this.ctx,this.masterInput,this.keyboard,this.offset,this.duration,when,samples);
-    }
+    if(this.keyboard.enabled)this.startKeyboardScheduler();
   }
   pause(){
     if(!this.playing)return;this.offset=this.position();this.stopNodes();this.playing=false;
@@ -335,8 +370,12 @@ export class MixerEngine{
   async renderMix(){
     const sr=44100,tail=2.5,len=Math.ceil((this.duration+tail)*sr);
     const off=new OfflineAudioContext(2,len,sr);
-    const master=off.createGain(),lim=off.createDynamicsCompressor();lim.threshold.value=-1.2;lim.knee.value=0;lim.ratio.value=18;lim.attack.value=.002;lim.release.value=.12;
-    master.connect(lim).connect(off.destination);master.gain.value=this.masterGain.gain.value;
+    const master=off.createGain(),lim=off.createDynamicsCompressor(),out=off.createGain();
+    lim.threshold.value=-1.2;lim.knee.value=0;lim.ratio.value=18;lim.attack.value=.002;lim.release.value=.12;
+    master.connect(lim).connect(out).connect(off.destination);out.gain.value=this.masterGain.gain.value;
+    const keyBus=off.createGain(),keyComp=off.createDynamicsCompressor();
+    keyBus.gain.value=.22;keyComp.threshold.value=-10;keyComp.ratio.value=4;keyComp.attack.value=.004;keyComp.release.value=.12;
+    keyBus.connect(keyComp).connect(out);
     const impulse=makeImpulse(off);
     const any=this.tracks.some(t=>t.settings.solo);
     for(const t of this.tracks){
@@ -346,7 +385,7 @@ export class MixerEngine{
       src.connect(n.input);src.start(0);
     }
     let samples=[];try{samples=await this.prepareKeyboard();}catch{}
-    scheduleKeyboard(off,master,this.keyboard,0,this.duration,0,samples);
+    scheduleKeyboard(off,keyBus,this.keyboard,0,this.duration,0,samples,this.duration);
     return await off.startRendering();
   }
 }
