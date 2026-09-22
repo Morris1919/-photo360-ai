@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#07090d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Morris Stem Lab" />
+  <title>MORRIS STEM LAB</title>
+  <meta name="description" content="Separazione stem e remix locale nel browser." />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="noise"></div>
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">LOCAL AI AUDIO WORKSTATION</div>
+      <h1>MORRIS <span>STEM LAB</span></h1>
+    </div>
+    <div class="engine-wrap">
+      <span id="engineBadge" class="badge">Rilevo motore…</span>
+      <span class="privacy">🔒 Il brano resta sul dispositivo</span>
+    </div>
+  </header>
+
+  <main>
+    <section id="uploadSection" class="hero panel">
+      <div class="hero-copy">
+        <p class="kicker">SEPARA. REMIXA. SUONA.</p>
+        <h2>Trasforma un brano in uno studio multitraccia.</h2>
+        <p>Voce, batteria, basso e altri strumenti vengono separati localmente nel browser. Nessuna API a pagamento, nessun upload del tuo audio.</p>
+      </div>
+      <label class="dropzone" id="dropZone">
+        <input id="fileInput" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac" hidden />
+        <div class="drop-icon">♫</div>
+        <strong>CARICA BRANO</strong>
+        <span>MP3, WAV, M4A • trascina qui da PC oppure tocca da iPhone</span>
+      </label>
+      <div id="fileCard" class="file-card hidden">
+        <div>
+          <strong id="fileName">Brano</strong>
+          <span id="fileMeta">--:--</span>
+        </div>
+        <button id="separateBtn" class="primary">SEPARA IN 4 STEM</button>
+      </div>
+      <div id="progressBox" class="progress-box hidden">
+        <div class="progress-head">
+          <strong id="progressTitle">Preparazione…</strong>
+          <span id="progressPct">0%</span>
+        </div>
+        <div class="progress-track"><div id="progressBar"></div></div>
+        <p id="progressDetail">Il primo avvio scarica il modello AI (~172 MB).</p>
+      </div>
+      <div id="statusBox" class="status hidden"></div>
+    </section>
+
+    <section id="workspace" class="hidden">
+      <div class="transport panel">
+        <div class="transport-buttons">
+          <button id="playBtn" class="round" aria-label="Play">▶</button>
+          <button id="pauseBtn" class="round" aria-label="Pausa">Ⅱ</button>
+          <button id="stopBtn" class="round" aria-label="Stop">■</button>
+        </div>
+        <div class="timeline">
+          <input id="seek" type="range" min="0" max="1000" value="0" />
+          <div class="time-row"><span id="timeNow">0:00</span><span id="timeTotal">0:00</span></div>
+        </div>
+        <div class="master-mini">
+          <label>MASTER <input id="masterVolume" type="range" min="0" max="1.3" step="0.01" value="0.9" /></label>
+        </div>
+      </div>
+
+      <div class="workspace-actions">
+        <button id="addTrackBtn">＋ AGGIUNGI TRACCIA</button>
+        <input id="extraFile" type="file" accept="audio/*" hidden />
+        <button id="saveProjectBtn">SALVA PROGETTO</button>
+        <button id="projectsBtn">I MIEI PROGETTI</button>
+        <button id="exportBtn" class="primary">ESPORTA REMIX WAV</button>
+      </div>
+
+      <section class="section-head">
+        <div><span>MIXER</span><h2>Stem e tracce</h2></div>
+        <p>Solo, mute, pan, EQ, compressione e FX in tempo reale.</p>
+      </section>
+      <div id="mixer" class="mixer"></div>
+
+      <section class="keyboard panel">
+        <div class="section-head compact">
+          <div><span>SMART ACCOMPANIMENT</span><h2>Tastiera automatica</h2></div>
+          <label class="toggle"><input id="keyboardEnabled" type="checkbox"><i></i><b>ON</b></label>
+        </div>
+        <div class="keyboard-grid">
+          <label>BPM
+            <input id="bpmInput" type="number" min="50" max="220" value="120" />
+          </label>
+          <label>STILE
+            <select id="keyboardStyle">
+              <option>Pad</option><option>Piano</option><option>Rhodes</option><option>Synth</option><option>Arpeggio</option>
+            </select>
+          </label>
+          <label>INTENSITÀ
+            <input id="keyboardIntensity" type="range" min="0" max="1" step="0.01" value="0.38" />
+          </label>
+          <label>HUMANIZE
+            <input id="keyboardHumanize" type="range" min="0" max="0.08" step="0.005" value="0.015" />
+          </label>
+        </div>
+        <label class="chords-label">ACCORDI, uno per battuta
+          <textarea id="chordsInput" rows="2" placeholder="Am | F | C | G"></textarea>
+        </label>
+        <div class="keyboard-actions">
+          <button id="analyzeBtn">RILEVA BPM + ACCORDI</button>
+          <span id="analysisNote">La stima armonica è automatica ma correggibile.</span>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="projectsDialog">
+    <div class="dialog-head"><h3>I miei progetti</h3><button id="closeProjects">✕</button></div>
+    <p>I progetti restano nel browser. Cancellando i dati del sito, vengono rimossi.</p>
+    <div id="projectsList"></div>
+  </dialog>
+
+  <template id="trackTemplate">
+    <article class="channel">
+      <div class="channel-top">
+        <div><span class="track-dot"></span><strong class="track-name">TRACK</strong></div>
+        <button class="download-stem" title="Scarica WAV">↓ WAV</button>
+      </div>
+      <canvas class="waveform" width="520" height="72"></canvas>
+      <div class="fader-row">
+        <label>VOL <input class="vol" type="range" min="0" max="1.35" step="0.01" value="1"></label>
+        <label>PAN <input class="pan" type="range" min="-1" max="1" step="0.01" value="0"></label>
+      </div>
+      <div class="channel-buttons"><button class="mute">MUTE</button><button class="solo">SOLO</button></div>
+      <details>
+        <summary>EQ + FX</summary>
+        <div class="fx-grid">
+          <label>LOW <input class="low" type="range" min="-12" max="12" step="0.5" value="0"></label>
+          <label>MID <input class="mid" type="range" min="-12" max="12" step="0.5" value="0"></label>
+          <label>HIGH <input class="high" type="range" min="-12" max="12" step="0.5" value="0"></label>
+          <label>COMP <input class="comp" type="range" min="0" max="1" step="0.01" value="0.25"></label>
+          <label>DELAY <input class="delay" type="range" min="0" max="0.7" step="0.01" value="0"></label>
+          <label>REVERB <input class="reverb" type="range" min="0" max="0.7" step="0.01" value="0"></label>
+          <label>FLANGER <input class="flanger" type="range" min="0" max="0.55" step="0.01" value="0"></label>
+        </div>
+      </details>
+    </article>
+  </template>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
